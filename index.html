@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>お知らせ</title>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="お知らせ">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <meta name="theme-color" content="#4C88AA">
+  <style>
+    :root { --main: #4C88AA; --bg: #f2f6f9; --card: #fff; --ink: #16303f; --sub: #5d7383; --line: #d9e4ec; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
+    header { background: var(--main); color: #fff; padding: calc(14px + env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; gap: 10px; }
+    header img { width: 36px; height: 36px; border-radius: 9px; }
+    header b { font-size: 18px; }
+    header small { margin-left: auto; opacity: .9; font-size: 13px; }
+    main { max-width: 560px; margin: 0 auto; padding: 14px 16px 40px; }
+    .card { background: var(--card); border-radius: 16px; box-shadow: 0 4px 14px rgba(27,58,76,.07); padding: 16px; margin-bottom: 14px; line-height: 1.7; }
+    h2 { font-size: 15px; margin: 0 0 8px; color: var(--main); }
+    select, input { width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    button { font-size: 16px; font-weight: 700; padding: 11px 20px; border: 0; border-radius: 12px; background: var(--main); color: #fff; margin-top: 10px; width: 100%; }
+    button.sub { background: #e8f0f5; color: var(--main); }
+    .note { color: var(--sub); font-size: 14px; }
+    .ok { color: #2f7a54; font-weight: 700; }
+    .ng { color: #a8452f; font-weight: 700; }
+    ol { padding-left: 1.3em; margin: 6px 0; }
+    .item { border-top: 1px solid var(--line); padding: 10px 0; }
+    .item:first-child { border-top: 0; }
+    .item .t { font-size: 12px; color: var(--sub); }
+    .item .b { white-space: pre-wrap; word-break: break-word; }
+    .links { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .links a { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); background: #f7fafc; border: 1px solid var(--line); border-radius: 12px; padding: 10px; font-size: 14px; font-weight: 700; }
+    .links img { width: 28px; height: 28px; border-radius: 7px; }
+    .hide { display: none; }
+  </style>
+</head>
+<body>
+  <header><img src="icon-192.png" alt=""><b>お知らせ</b><small id="who"></small></header>
+  <main>
+    <div class="card hide" id="nokey">
+      <h2>リンクを1回だけ入れてください</h2>
+      <div class="note">牧場から届いた「お知らせアプリ」のリンクを長押し →「コピー」→ 下の欄を押して「ペースト」→「開く」。</div>
+      <input id="keyin" type="url" inputmode="url" autocomplete="off" placeholder="ここを押して貼る">
+      <button onclick="pasteKey()">開く</button>
+    </div>
+
+    <div class="card hide" id="ios">
+      <h2>iPhone：先にホーム画面に追加してください</h2>
+      <div class="note">iPhone は、ホーム画面のアイコンから開いたときだけ通知が届きます（iOS 16.4 以上）。</div>
+      <ol>
+        <li>下の <b>共有ボタン</b>（四角から矢印）を押す</li>
+        <li><b>「ホーム画面に追加」</b>を押す</li>
+        <li>ホーム画面にできた <b>「お知らせ」</b> のアイコンから開く</li>
+      </ol>
+    </div>
+
+    <div class="card hide" id="setup">
+      <h2>通知の設定</h2>
+      <div id="state" class="note"></div>
+      <label class="note" for="name">あなたの名前</label>
+      <select id="name"></select>
+      <input id="name2" class="hide" placeholder="名前を書く" maxlength="20">
+      <button id="allow" onclick="allow()">通知を許可する</button>
+    </div>
+
+    <div class="card">
+      <h2>届いたお知らせ</h2>
+      <div id="list" class="note">まだありません</div>
+    </div>
+
+    <div class="card">
+      <h2>牧場のアプリ</h2>
+      <div class="links">
+        <a href="https://milkyfarm.github.io/milkyfarm-note/"><img src="https://milkyfarm.github.io/milkyfarm-note/icon-192.png" alt="">ノート写真</a>
+        <a href="https://milkyfarm.github.io/milkyfarm-board/"><img src="https://milkyfarm.github.io/milkyfarm-board/icon-192.png" alt="">出勤ボード</a>
+        <a href="https://milkyfarm.github.io/milkyfarm-shift/"><img src="https://milkyfarm.github.io/milkyfarm-shift/icon-192.png" alt="">シフト</a>
+        <a href="https://milkyfarm.github.io/milkyfarm-cow/"><img src="https://milkyfarm.github.io/milkyfarm-cow/icon-192.png" alt="">乳牛カルテ</a>
+        <a href="https://milkyfarm.github.io/milkyfarm-calf/"><img src="https://milkyfarm.github.io/milkyfarm-calf/icon-192.png" alt="">子牛カルテ</a>
+        <a href="https://milkyfarm.github.io/milkyfarm-camera/"><img src="https://milkyfarm.github.io/milkyfarm-camera/icon-192.png" alt="">牛舎カメラ</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // 鍵（登録用の合言葉）はこのページには書かない。リンクの ?k= で受け取り、URLにも残す（iPhone はホーム画面に追加したURLで起動するため）
+    var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
+    var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
+    function $(i) { return document.getElementById(i); }
+    function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v); } catch (e) { return ''; } }
+    function pick(s) { var m = String(s || '').match(/[#&?]k=([0-9a-f]{16,})/); return m ? m[1] : (/^[0-9a-f]{16,}$/.test(String(s).trim()) ? String(s).trim() : ''); }
+    var key = pick(location.search) || pick(location.hash) || ls('staff_key');
+    if (key) { ls('staff_key', key); if (pick(location.search) !== key || location.hash) history.replaceState(null, '', location.pathname + '?k=' + key); }
+    function pasteKey() { var k = pick($('keyin').value); if (k) { ls('staff_key', k); location.replace(location.pathname + '?k=' + k); } }
+
+    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+    var canPush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+    function b64ToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); s += '='.repeat((4 - s.length % 4) % 4); var r = atob(s), a = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a; }
+
+    function setState(html) { $('state').innerHTML = html; }
+
+    async function loadNames() {
+      var sel = $('name'), mine = ls('staff_name');
+      try {
+        var r = await fetch(EXEC + '?api=pushNames&k=' + encodeURIComponent(key));
+        var j = await r.json();
+        if (!j.ok) { setState('<span class="ng">リンクが古いか違います。牧場から届いたリンクで開き直してください。</span>'); return; }
+        var names = j.names || [];
+        sel.innerHTML = '<option value="">選んでください</option>' + names.map(function (n) { return '<option>' + n.replace(/[<>&]/g, '') + '</option>'; }).join('') + '<option value="*">その他（書く）</option>';
+        if (mine) { if (names.indexOf(mine) >= 0) sel.value = mine; else { sel.value = '*'; $('name2').value = mine; $('name2').classList.remove('hide'); } }
+      } catch (e) { setState('<span class="ng">名前の一覧が読めませんでした（電波を確認して開き直してください）</span>'); }
+    }
+    $('name').onchange = function () { $('name2').classList.toggle('hide', this.value !== '*'); };
+
+    async function allow() {
+      var name = $('name').value === '*' ? $('name2').value.trim() : $('name').value;
+      if (!name) { setState('<span class="ng">名前を選んでください</span>'); return; }
+      $('allow').disabled = true; setState('設定しています…');
+      try {
+        var perm = await Notification.requestPermission();
+        if (perm !== 'granted') throw new Error('通知が「許可しない」になっています。設定アプリ →「通知」→「お知らせ」で許可してください');
+        var reg = await navigator.serviceWorker.register('sw.js');
+        await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID) });
+        var r = await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'pushReg', k: key, name: name, sub: sub.toJSON(), ua: navigator.userAgent }) });
+        var j = await r.json();
+        if (!j.ok) throw new Error(j.error === 'key' ? 'リンクが古いか違います' : '登録できませんでした');
+        ls('staff_name', name); ls('staff_reg', '1');
+        setState('<span class="ok">通知の設定ができました（' + name + '）。</span> 試しの通知はしばらくすると届きます。');
+        $('allow').textContent = 'もう一度設定する';
+        $('who').textContent = name;
+      } catch (e) { setState('<span class="ng">' + (e.message || e) + '</span>'); }
+      $('allow').disabled = false;
+    }
+
+    function openDb() {
+      return new Promise(function (ok, ng) {
+        var r = indexedDB.open('mf-staff', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('notes', { keyPath: 'id', autoIncrement: true }); };
+        r.onsuccess = function () { ok(r.result); }; r.onerror = function () { ng(r.error); };
+      });
+    }
+    async function showList() {
+      try {
+        var d = await openDb();
+        var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
+        all.sort(function (a, b) { return b.at - a.at; });
+        if (!all.length) { $('list').textContent = 'まだありません'; return; }
+        $('list').innerHTML = '';
+        all.slice(0, 100).forEach(function (n) {
+          var div = document.createElement('div'); div.className = 'item';
+          var t = new Date(n.at);
+          div.innerHTML = '<div class="t"></div><div class="b"></div>';
+          div.querySelector('.t').textContent = (t.getMonth() + 1) + '/' + t.getDate() + ' ' + t.getHours() + ':' + String(t.getMinutes()).padStart(2, '0') + (n.title && n.title !== 'ミルキーファーム' ? '　' + n.title : '');
+          div.querySelector('.b').textContent = n.body;
+          if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
+          $('list').appendChild(div);
+        });
+      } catch (e) { $('list').textContent = 'この端末では履歴を表示できません'; }
+    }
+
+    (async function start() {
+      $('who').textContent = ls('staff_name');
+      showList();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+        navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') showList(); });
+      }
+      if (!key) { $('nokey').classList.remove('hide'); return; }
+      if (isIOS && !standalone) { $('ios').classList.remove('hide'); return; }
+      $('setup').classList.remove('hide');
+      if (!canPush) { setState('<span class="ng">この端末・ブラウザは通知に対応していません（iPhone は iOS 16.4 以上で、ホーム画面のアイコンから開く）</span>'); $('allow').disabled = true; return; }
+      if (ls('staff_reg') && Notification.permission === 'granted') { setState('<span class="ok">通知は設定ずみです。</span>'); $('allow').textContent = 'もう一度設定する'; }
+      else setState('名前を選んで「通知を許可する」を押してください。');
+      loadNames();
+    })();
+  </script>
+</body>
+</html>
