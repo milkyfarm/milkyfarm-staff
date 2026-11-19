@@ -21,6 +21,7 @@
     .band .row { display: flex; align-items: center; gap: 10px; }
     .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; }
     .band .logo img { width: 40px; height: 40px; }
+    .band .wm { height: 24px; width: auto; display: block; }
     .band .name { font-size: 18px; font-weight: 700; letter-spacing: .04em; }
     .bell { margin-left: auto; position: relative; width: 42px; height: 42px; border: 0; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; cursor: pointer; }
     .bell svg { width: 22px; height: 22px; }
@@ -37,6 +38,10 @@
     .sep { height: 1px; background: var(--line); margin: 12px 0; }
     .lbl { font-size: 12px; color: var(--sub); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
     .duty { margin-left: auto; background: var(--or-bg); color: #9a6420; border: 1px solid #F3DDBD; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+    .prow { display: flex; gap: 10px; align-items: baseline; margin-top: 4px; }
+    .pk { flex: none; width: 64px; font-size: 12px; color: var(--sub); }
+    .morning { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.65; }
+    .morning a { color: var(--main); }
     .people { font-size: 15px; font-weight: 700; line-height: 1.7; }
     .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
     .num { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 8px; text-align: center; }
@@ -80,7 +85,7 @@
   <div class="band">
     <div class="row">
       <div class="logo"><img src="logo.png" alt=""></div>
-      <div class="name">ミルキーファーム</div>
+      <img class="wm" src="wordmark.png" alt="ミルキーファーム">
       <button class="bell" onclick="openList()" aria-label="お知らせ">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         <span class="n hide" id="unread"></span>
@@ -105,7 +110,13 @@
       </div>
       <div class="sep"></div>
       <div class="lbl">今日の出勤<span class="duty hide" id="duty"></span></div>
-      <div class="people" id="people">—</div>
+      <div class="prow"><span class="pk">社員</span><span class="people" id="people">—</span></div>
+      <div class="prow hide" id="partRow"><span class="pk">アルバイト</span><span class="people" id="part"></span></div>
+    </div>
+
+    <div class="card hide" id="morningCard">
+      <div class="lbl">今日の連絡</div>
+      <div class="morning" id="morning"></div>
     </div>
 
     <div class="nums">
@@ -197,8 +208,10 @@
     $('wxt').textContent = wx ? wx[1] + (w.tmin != null && w.tmax != null ? '　' + Math.round(w.tmin) + '〜' + Math.round(w.tmax) + '℃' : '') : '—';
     $('wxs').textContent = w.rain != null ? '雨の確率 ' + w.rain + '%' : '';
     $('thi').textContent = w.thi != null ? Math.round(w.thi) : '—';
-    var p = d.attend || [];
-    $('people').textContent = p.length ? p.join('・') : '—';
+    var a = d.attend || [], st = Array.isArray(a) ? a : (a.staff || []), pt = Array.isArray(a) ? [] : (a.part || []);
+    $('people').textContent = st.length ? st.join('・') : '—';
+    $('part').textContent = pt.map(function (x) { return x.slot ? x.name + '（' + x.slot + '）' : x.name; }).join('・');
+    $('partRow').classList.toggle('hide', !pt.length);
     if (d.duty) { $('duty').textContent = '当番 ' + d.duty; $('duty').classList.remove('hide'); } else $('duty').classList.add('hide');
     var m = d.milk || {};
     $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
@@ -207,15 +220,21 @@
     $('calv').innerHTML = d.calving != null ? esc(d.calving) + '<small>頭</small>' : '—';
   }
 
-  async function loadHome() {
-    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+  // 朝の連絡（社員グループに朝送った1通。その日の分だけ）
+  function drawMorning(t) {
+    if (!t) { $('morningCard').classList.add('hide'); return; }
+    $('morning').innerHTML = esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
+    $('morningCard').classList.remove('hide');
+  }
+
+  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawMorning(c.morning); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
     if (!key) return;
     try {
       var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
       var j = await r.json();
       if (!j.ok) return;
       ls('staff_home', JSON.stringify(j));
-      drawHome(j.data);
+      drawHome(j.data); drawMorning(j.morning);
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
     } catch (e) {}
   }
