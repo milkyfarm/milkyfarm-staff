@@ -1,7 +1,7 @@
 {
   "id": "/milkyfarm-staff/",
-  "name": "ミルキーファーム",
-  "short_name": "ミルキーファーム",
+  "name": "milkyfarm",
+  "short_name": "milkyfarm",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F3F7FA",
