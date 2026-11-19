@@ -3,185 +3,309 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>お知らせ</title>
+  <title>ミルキーファーム</title>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta name="apple-mobile-web-app-title" content="お知らせ">
+  <meta name="apple-mobile-web-app-title" content="ミルキーファーム">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icon-192.png">
   <meta name="theme-color" content="#4C88AA">
   <style>
-    :root { --main: #4C88AA; --bg: #f2f6f9; --card: #fff; --ink: #16303f; --sub: #5d7383; --line: #d9e4ec; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
-    header { background: var(--main); color: #fff; padding: calc(14px + env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; gap: 10px; }
-    header img { width: 36px; height: 36px; border-radius: 9px; }
-    header b { font-size: 18px; }
-    header small { margin-left: auto; opacity: .9; font-size: 13px; }
-    main { max-width: 560px; margin: 0 auto; padding: 14px 16px 40px; }
-    .card { background: var(--card); border-radius: 16px; box-shadow: 0 4px 14px rgba(27,58,76,.07); padding: 16px; margin-bottom: 14px; line-height: 1.7; }
-    h2 { font-size: 15px; margin: 0 0 8px; color: var(--main); }
-    select, input { width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
-    button { font-size: 16px; font-weight: 700; padding: 11px 20px; border: 0; border-radius: 12px; background: var(--main); color: #fff; margin-top: 10px; width: 100%; }
-    button.sub { background: #e8f0f5; color: var(--main); }
-    .note { color: var(--sub); font-size: 14px; }
-    .ok { color: #2f7a54; font-weight: 700; }
-    .ng { color: #a8452f; font-weight: 700; }
-    ol { padding-left: 1.3em; margin: 6px 0; }
-    .item { border-top: 1px solid var(--line); padding: 10px 0; }
+    :root { --main: #4C88AA; --main-d: #3d7394; --bg: #F3F7FA; --card: #fff; --line: #D3E2EB; --ink: #1F3A4A; --sub: #5A7585; --or: #E9A54E; --or-bg: #FDF6EC; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif; }
+    .wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+    .band { background: var(--main); color: #fff; padding: calc(14px + env(safe-area-inset-top)) 18px 46px; }
+    .band .row { display: flex; align-items: center; gap: 10px; }
+    .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; }
+    .band .logo img { width: 40px; height: 40px; }
+    .band .name { font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+    .bell { margin-left: auto; position: relative; width: 42px; height: 42px; border: 0; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; cursor: pointer; }
+    .bell svg { width: 22px; height: 22px; }
+    .bell .n { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--or); color: #fff; font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
+    .date { margin-top: 10px; font-size: 14px; opacity: .92; }
+    main { padding: 0 14px 30px; margin-top: -32px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; }
+    .today { box-shadow: 0 6px 18px rgba(31,58,74,.08); }
+    .wx { display: flex; align-items: center; gap: 12px; }
+    .wx .ic { font-size: 30px; line-height: 1; }
+    .wx .t { font-size: 17px; font-weight: 700; }
+    .wx .thi { margin-left: auto; text-align: right; font-size: 12px; color: var(--sub); }
+    .wx .thi b { display: block; font-size: 18px; color: var(--ink); }
+    .sep { height: 1px; background: var(--line); margin: 12px 0; }
+    .lbl { font-size: 12px; color: var(--sub); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .duty { margin-left: auto; background: var(--or-bg); color: #9a6420; border: 1px solid #F3DDBD; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+    .people { font-size: 15px; font-weight: 700; line-height: 1.7; }
+    .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .num { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 8px; text-align: center; }
+    .num .k { font-size: 11px; color: var(--sub); }
+    .num .v { font-size: 22px; font-weight: 800; margin-top: 2px; }
+    .num .v small { font-size: 12px; font-weight: 700; margin-left: 2px; }
+    .num .s { font-size: 10px; color: var(--sub); }
+    .notice { display: flex; align-items: center; gap: 10px; background: var(--or-bg); border: 1px solid #F3DDBD; border-radius: 14px; padding: 11px 14px; margin-bottom: 18px; cursor: pointer; }
+    .notice svg { flex: none; width: 18px; height: 18px; }
+    .notice .b { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .notice .t { flex: none; font-size: 11px; color: var(--sub); }
+    h2 { font-size: 14px; color: var(--sub); margin: 0 4px 8px; font-weight: 700; }
+    .apps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .app { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; text-decoration: none; color: var(--ink); min-height: 58px; }
+    .app:active { background: #eaf2f7; }
+    .app .i { flex: none; width: 36px; height: 36px; border-radius: 10px; background: #EEF5F9; display: grid; place-items: center; }
+    .app .i svg { width: 24px; height: 24px; }
+    .app .nm { font-size: 15px; font-weight: 700; }
+    .foot { text-align: center; color: var(--sub); font-size: 12px; margin: 22px 0 6px; line-height: 1.7; }
+    .setup { margin-top: 14px; }
+    .setup .note { font-size: 13px; color: var(--sub); line-height: 1.6; }
+    select, input { width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); margin-top: 8px; }
+    button.go { width: 100%; font-size: 16px; font-weight: 700; padding: 11px; border: 0; border-radius: 12px; background: var(--main); color: #fff; margin-top: 10px; cursor: pointer; }
+    .ok { color: #2f7a54; font-weight: 700; } .ng { color: #a8452f; font-weight: 700; }
+    /* お知らせ一覧 */
+    .sheet { position: fixed; inset: 0; background: var(--bg); z-index: 10; overflow: auto; display: none; }
+    .sheet.on { display: block; }
+    .sheet .top { position: sticky; top: 0; background: var(--main); color: #fff; padding: calc(14px + env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; gap: 10px; }
+    .sheet .top button { border: 0; background: rgba(255,255,255,.16); color: #fff; font-size: 15px; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
+    .sheet .in { max-width: 480px; margin: 0 auto; padding: 14px; }
+    .item { padding: 10px 0; border-top: 1px solid var(--line); }
     .item:first-child { border-top: 0; }
     .item .t { font-size: 12px; color: var(--sub); }
-    .item .b { white-space: pre-wrap; word-break: break-word; }
-    .links { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-    .links a { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); background: #f7fafc; border: 1px solid var(--line); border-radius: 12px; padding: 10px; font-size: 14px; font-weight: 700; }
-    .links img { width: 28px; height: 28px; border-radius: 7px; }
-    .hide { display: none; }
+    .item .b { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.6; }
+    .item.new .t::after { content: "新"; margin-left: 6px; background: var(--or); color: #fff; font-size: 10px; padding: 0 5px; border-radius: 6px; }
+    .hide { display: none !important; }
   </style>
 </head>
 <body>
-  <header><img src="icon-192.png" alt=""><b>お知らせ</b><small id="who"></small></header>
+<div class="wrap">
+  <div class="band">
+    <div class="row">
+      <div class="logo"><img src="logo.png" alt=""></div>
+      <div class="name">ミルキーファーム</div>
+      <button class="bell" onclick="openList()" aria-label="お知らせ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="n hide" id="unread"></span>
+      </button>
+    </div>
+    <div class="date" id="date"></div>
+  </div>
+
   <main>
     <div class="card hide" id="nokey">
-      <h2>リンクを1回だけ入れてください</h2>
-      <div class="note">牧場から届いた「お知らせアプリ」のリンクを長押し →「コピー」→ 下の欄を押して「ペースト」→「開く」。</div>
+      <b>リンクを1回だけ入れてください</b>
+      <div class="setup note">牧場から届いたリンクを長押し →「コピー」→ 下の欄を押して「ペースト」→「開く」。</div>
       <input id="keyin" type="url" inputmode="url" autocomplete="off" placeholder="ここを押して貼る">
-      <button onclick="pasteKey()">開く</button>
+      <button class="go" onclick="pasteKey()">開く</button>
     </div>
 
-    <div class="card hide" id="ios">
-      <h2>iPhone：先にホーム画面に追加してください</h2>
-      <div class="note">iPhone は、ホーム画面のアイコンから開いたときだけ通知が届きます（iOS 16.4 以上）。</div>
-      <ol>
-        <li>下の <b>共有ボタン</b>（四角から矢印）を押す</li>
-        <li><b>「ホーム画面に追加」</b>を押す</li>
-        <li>ホーム画面にできた <b>「お知らせ」</b> のアイコンから開く</li>
-      </ol>
+    <div class="card today">
+      <div class="wx">
+        <div class="ic" id="wxi">—</div>
+        <div><div class="t" id="wxt">—</div><div class="lbl" id="wxs" style="margin:0"></div></div>
+        <div class="thi">THI<b id="thi">—</b></div>
+      </div>
+      <div class="sep"></div>
+      <div class="lbl">今日の出勤<span class="duty hide" id="duty"></span></div>
+      <div class="people" id="people">—</div>
     </div>
 
-    <div class="card hide" id="setup">
-      <h2>通知の設定</h2>
-      <div id="state" class="note"></div>
-      <label class="note" for="name">あなたの名前</label>
+    <div class="nums">
+      <div class="num"><div class="k">搾乳頭数</div><div class="v" id="head">—</div><div class="s" id="headS">昨日</div></div>
+      <div class="num"><div class="k">平均乳量</div><div class="v" id="avg">—</div><div class="s" id="avgS">昨日</div></div>
+      <div class="num"><div class="k">分娩予定</div><div class="v" id="calv">—</div><div class="s">今週</div></div>
+    </div>
+
+    <div class="notice" onclick="openList()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E9A54E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <div class="b" id="lastB">お知らせはまだありません</div><div class="t" id="lastT"></div>
+    </div>
+
+    <h2>アプリ</h2>
+    <div class="apps" id="apps"></div>
+
+    <div class="card setup hide" id="setup">
+      <b>通知を受け取る</b>
+      <div class="note" id="state"></div>
       <select id="name"></select>
       <input id="name2" class="hide" placeholder="名前を書く" maxlength="20">
-      <button id="allow" onclick="allow()">通知を許可する</button>
+      <button class="go" id="allow" onclick="allow()">通知を許可する</button>
     </div>
 
-    <div class="card">
-      <h2>届いたお知らせ</h2>
-      <div id="list" class="note">まだありません</div>
-    </div>
-
-    <div class="card">
-      <h2>牧場のアプリ</h2>
-      <div class="links">
-        <a href="https://milkyfarm.github.io/milkyfarm-note/"><img src="https://milkyfarm.github.io/milkyfarm-note/icon-192.png" alt="">ノート写真</a>
-        <a href="https://milkyfarm.github.io/milkyfarm-board/"><img src="https://milkyfarm.github.io/milkyfarm-board/icon-192.png" alt="">出勤ボード</a>
-        <a href="https://milkyfarm.github.io/milkyfarm-shift/"><img src="https://milkyfarm.github.io/milkyfarm-shift/icon-192.png" alt="">シフト</a>
-        <a href="https://milkyfarm.github.io/milkyfarm-cow/"><img src="https://milkyfarm.github.io/milkyfarm-cow/icon-192.png" alt="">乳牛カルテ</a>
-        <a href="https://milkyfarm.github.io/milkyfarm-calf/"><img src="https://milkyfarm.github.io/milkyfarm-calf/icon-192.png" alt="">子牛カルテ</a>
-        <a href="https://milkyfarm.github.io/milkyfarm-camera/"><img src="https://milkyfarm.github.io/milkyfarm-camera/icon-192.png" alt="">牛舎カメラ</a>
-      </div>
-    </div>
+    <div class="foot" id="foot">iPhoneは「共有」→「ホーム画面に追加」で通知が届きます</div>
   </main>
+</div>
 
-  <script>
-    // 鍵（登録用の合言葉）はこのページには書かない。リンクの ?k= で受け取り、URLにも残す（iPhone はホーム画面に追加したURLで起動するため）
-    var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
-    var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
-    function $(i) { return document.getElementById(i); }
-    function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v); } catch (e) { return ''; } }
-    function pick(s) { var m = String(s || '').match(/[#&?]k=([0-9a-f]{16,})/); return m ? m[1] : (/^[0-9a-f]{16,}$/.test(String(s).trim()) ? String(s).trim() : ''); }
-    var key = pick(location.search) || pick(location.hash) || ls('staff_key');
-    if (key) { ls('staff_key', key); if (pick(location.search) !== key || location.hash) history.replaceState(null, '', location.pathname + '?k=' + key); }
-    function pasteKey() { var k = pick($('keyin').value); if (k) { ls('staff_key', k); location.replace(location.pathname + '?k=' + k); } }
+<div class="sheet" id="sheet">
+  <div class="top"><b style="font-size:17px">お知らせ</b><button style="margin-left:auto" onclick="closeList()">閉じる</button></div>
+  <div class="in"><div class="card" id="list">まだありません</div></div>
+</div>
 
-    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    var standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-    var canPush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+<script>
+  var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
+  var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
+  // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
+  var APPS0 = [
+    { name: '出勤ボード', sub: '今日の出勤と当番', url: 'https://milkyfarm.github.io/milkyfarm-board/', icon: 'board' },
+    { name: 'ノート写真', sub: '治療・削蹄ノートを送る', url: 'https://milkyfarm.github.io/milkyfarm-note/', icon: 'note' },
+    { name: '乳牛カルテ', sub: '牛ごとの病気・乳量', url: 'https://milkyfarm.github.io/milkyfarm-cow/', icon: 'cow' },
+    { name: '子牛カルテ', sub: '哺乳と治療の記録', url: 'https://milkyfarm.github.io/milkyfarm-calf/', icon: 'calf' },
+    { name: '牛舎カメラ', sub: '餌槽の様子', url: 'https://milkyfarm.github.io/milkyfarm-camera/', icon: 'camera' }
+  ];
+  // 仮のアイコン（白地＋青い線＋オレンジの差し色）
+  var B = '#4C88AA', O = '#E9A54E';
+  var ICONS = {
+    board: '<rect x="5" y="4" width="14" height="17" rx="2" stroke="' + B + '"/><path d="M9 4V3h6v1" stroke="' + B + '"/><circle cx="12" cy="10" r="2.2" stroke="' + O + '"/><path d="M8.5 16.5c.6-2 2-3 3.5-3s2.9 1 3.5 3" stroke="' + B + '"/>',
+    note: '<path d="M6 3h9l3 3v15H6z" stroke="' + B + '"/><path d="M9 9h6M9 12.5h6M9 16h3.5" stroke="' + B + '"/><circle cx="16.5" cy="17" r="2.6" fill="#fff" stroke="' + O + '"/>',
+    cow: '<path d="M7 7c-2 0-3.5-1-4-2.5M17 7c2 0 3.5-1 4-2.5" stroke="' + B + '"/><path d="M7 6.5h10l-.8 8.5a4.2 4.2 0 0 1-8.4 0z" stroke="' + B + '"/><ellipse cx="12" cy="17.2" rx="3" ry="2" stroke="' + O + '"/><circle cx="9.7" cy="10" r=".6" fill="' + B + '"/><circle cx="14.3" cy="10" r=".6" fill="' + B + '"/>',
+    calf: '<path d="M10 3h4v3l1.5 2v12a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8L10 6z" stroke="' + B + '"/><path d="M8.5 13h7" stroke="' + O + '"/><path d="M11 2h2" stroke="' + B + '"/>',
+    camera: '<rect x="3" y="7" width="13" height="9" rx="2" stroke="' + B + '"/><path d="M16 10l5-2.5v8L16 13" stroke="' + B + '"/><circle cx="9.5" cy="11.5" r="2.3" stroke="' + O + '"/>',
+    app: '<rect x="4" y="4" width="16" height="16" rx="4" stroke="' + B + '"/><circle cx="12" cy="12" r="3" stroke="' + O + '"/>'
+  };
+  function svg(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || ICONS.app) + '</svg>'; }
+  function $(i) { return document.getElementById(i); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v); } catch (e) { return ''; } }
 
-    function b64ToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); s += '='.repeat((4 - s.length % 4) % 4); var r = atob(s), a = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a; }
+  // 鍵はページに書かない。リンクの ?k= で受け取り、URLにも残す（iPhone はホーム画面に追加したURLで起動する）
+  function pick(s) { var m = String(s || '').match(/[#&?]k=([0-9a-f]{16,})/); return m ? m[1] : (/^[0-9a-f]{16,}$/.test(String(s).trim()) ? String(s).trim() : ''); }
+  var key = pick(location.search) || pick(location.hash) || ls('staff_key');
+  if (key) { ls('staff_key', key); if (pick(location.search) !== key || location.hash) history.replaceState(null, '', location.pathname + '?k=' + key); }
+  function pasteKey() { var k = pick($('keyin').value); if (k) { ls('staff_key', k); location.replace(location.pathname + '?k=' + k); } }
 
-    function setState(html) { $('state').innerHTML = html; }
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  var canPush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
-    async function loadNames() {
-      var sel = $('name'), mine = ls('staff_name');
-      try {
-        var r = await fetch(EXEC + '?api=pushNames&k=' + encodeURIComponent(key));
-        var j = await r.json();
-        if (!j.ok) { setState('<span class="ng">リンクが古いか違います。牧場から届いたリンクで開き直してください。</span>'); return; }
-        var names = j.names || [];
-        sel.innerHTML = '<option value="">選んでください</option>' + names.map(function (n) { return '<option>' + n.replace(/[<>&]/g, '') + '</option>'; }).join('') + '<option value="*">その他（書く）</option>';
-        if (mine) { if (names.indexOf(mine) >= 0) sel.value = mine; else { sel.value = '*'; $('name2').value = mine; $('name2').classList.remove('hide'); } }
-      } catch (e) { setState('<span class="ng">名前の一覧が読めませんでした（電波を確認して開き直してください）</span>'); }
+  // ---- 日付 ----
+  function today() { var d = new Date(); return (d.getMonth() + 1) + '月' + d.getDate() + '日（' + '日月火水木金土'[d.getDay()] + '）'; }
+  $('date').textContent = today();
+
+  // ---- ボタン ----
+  function drawApps(list) {
+    $('apps').innerHTML = list.map(function (a) {
+      return '<a class="app" href="' + esc(a.url) + '"><span class="i">' + svg(a.icon) + '</span><span><span class="nm">' + esc(a.name) + '</span></span></a>';
+    }).join('');
+  }
+
+  // ---- 今日のカード・数字 ----
+  var WX = { 0: ['☀️', '晴れ'], 1: ['🌤️', '晴れ'], 2: ['⛅', 'くもり時々晴れ'], 3: ['☁️', 'くもり'], 45: ['🌫️', '霧'], 48: ['🌫️', '霧'], 51: ['🌦️', '霧雨'], 53: ['🌦️', '霧雨'], 55: ['🌦️', '霧雨'], 61: ['🌧️', '雨'], 63: ['🌧️', '雨'], 65: ['🌧️', '強い雨'], 71: ['🌨️', '雪'], 73: ['🌨️', '雪'], 75: ['🌨️', '大雪'], 80: ['🌦️', 'にわか雨'], 81: ['🌧️', 'にわか雨'], 82: ['⛈️', '激しい雨'], 95: ['⛈️', '雷雨'], 96: ['⛈️', '雷雨'], 99: ['⛈️', '雷雨'] };
+  function dash(v) { return v === null || v === undefined || v === '' ? '—' : v; }
+  function drawHome(d) {
+    d = d || {};
+    var w = d.weather || {};
+    var wx = WX[w.code] || null;
+    $('wxi').textContent = wx ? wx[0] : '—';
+    $('wxt').textContent = wx ? wx[1] + (w.tmin != null && w.tmax != null ? '　' + Math.round(w.tmin) + '〜' + Math.round(w.tmax) + '℃' : '') : '—';
+    $('wxs').textContent = w.rain != null ? '雨の確率 ' + w.rain + '%' : '';
+    $('thi').textContent = w.thi != null ? Math.round(w.thi) : '—';
+    var p = d.attend || [];
+    $('people').textContent = p.length ? p.join('・') : '—';
+    if (d.duty) { $('duty').textContent = '当番 ' + d.duty; $('duty').classList.remove('hide'); } else $('duty').classList.add('hide');
+    var m = d.milk || {};
+    $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
+    $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' : '—';
+    $('headS').textContent = $('avgS').textContent = m.date ? '昨日 ' + m.date : '昨日';
+    $('calv').innerHTML = d.calving != null ? esc(d.calving) + '<small>頭</small>' : '—';
+  }
+
+  async function loadHome() {
+    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+    if (!key) return;
+    try {
+      var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
+      var j = await r.json();
+      if (!j.ok) return;
+      ls('staff_home', JSON.stringify(j));
+      drawHome(j.data);
+      if (j.buttons && j.buttons.length) drawApps(j.buttons);
+    } catch (e) {}
+  }
+
+  // ---- お知らせ（service worker が端末の中に残したもの） ----
+  function openDb() {
+    return new Promise(function (ok, ng) {
+      var r = indexedDB.open('mf-staff', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('notes', { keyPath: 'id', autoIncrement: true }); };
+      r.onsuccess = function () { ok(r.result); }; r.onerror = function () { ng(r.error); };
+    });
+  }
+  async function notes() {
+    try {
+      var d = await openDb();
+      var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
+      return all.sort(function (a, b) { return b.at - a.at; });
+    } catch (e) { return []; }
+  }
+  function when(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  async function drawNotes() {
+    var all = await notes(), seen = Number(ls('staff_seen') || 0);
+    var un = all.filter(function (n) { return n.at > seen; }).length;
+    $('unread').textContent = un > 99 ? '99+' : un; $('unread').classList.toggle('hide', !un);
+    if (all.length) { $('lastB').textContent = all[0].body.split('\n')[0]; $('lastT').textContent = when(all[0].at); }
+    if (!all.length) { $('list').textContent = 'まだありません'; return; }
+    $('list').innerHTML = '';
+    all.slice(0, 100).forEach(function (n) {
+      var div = document.createElement('div'); div.className = 'item' + (n.at > seen ? ' new' : '');
+      div.innerHTML = '<div class="t"></div><div class="b"></div>';
+      div.querySelector('.t').textContent = when(n.at) + (n.title && n.title !== 'ミルキーファーム' ? '　' + n.title : '');
+      div.querySelector('.b').textContent = n.body;
+      if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
+      $('list').appendChild(div);
+    });
+  }
+  function openList() { $('sheet').classList.add('on'); drawNotes().then(function () { ls('staff_seen', String(Date.now())); $('unread').classList.add('hide'); }); }
+  function closeList() { $('sheet').classList.remove('on'); drawNotes(); }
+
+  // ---- 通知の設定 ----
+  function b64ToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); s += '='.repeat((4 - s.length % 4) % 4); var r = atob(s), a = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a; }
+  function setState(h) { $('state').innerHTML = h; }
+  async function loadNames() {
+    var sel = $('name'), mine = ls('staff_name');
+    try {
+      var j = await (await fetch(EXEC + '?api=pushNames&k=' + encodeURIComponent(key))).json();
+      if (!j.ok) { setState('<span class="ng">リンクが古いか違います。牧場から届いたリンクで開き直してください。</span>'); return; }
+      var names = j.names || [];
+      sel.innerHTML = '<option value="">名前を選んでください</option>' + names.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '<option value="*">その他（書く）</option>';
+      if (mine) { if (names.indexOf(mine) >= 0) sel.value = mine; else { sel.value = '*'; $('name2').value = mine; $('name2').classList.remove('hide'); } }
+    } catch (e) { setState('<span class="ng">名前の一覧が読めませんでした</span>'); }
+  }
+  $('name').onchange = function () { $('name2').classList.toggle('hide', this.value !== '*'); };
+  async function allow() {
+    var name = $('name').value === '*' ? $('name2').value.trim() : $('name').value;
+    if (!name) { setState('<span class="ng">名前を選んでください</span>'); return; }
+    $('allow').disabled = true; setState('設定しています…');
+    try {
+      var perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('通知が「許可しない」になっています。設定アプリ →「通知」→「ミルキーファーム」で許可してください');
+      var reg = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID) });
+      var j = await (await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'pushReg', k: key, name: name, sub: sub.toJSON(), ua: navigator.userAgent }) })).json();
+      if (!j.ok) throw new Error(j.error === 'key' ? 'リンクが古いか違います' : '登録できませんでした');
+      ls('staff_name', name); ls('staff_reg', '1');
+      setState('<span class="ok">通知の設定ができました（' + esc(name) + '）。</span>');
+      setTimeout(function () { $('setup').classList.add('hide'); }, 2500);
+    } catch (e) { setState('<span class="ng">' + esc(e.message || e) + '</span>'); }
+    $('allow').disabled = false;
+  }
+
+  // ---- はじめ ----
+  drawApps(APPS0);
+  drawHome(null);
+  drawNotes();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+    navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') drawNotes(); });
+  }
+  if (standalone) $('foot').textContent = '(有)ミルキーファーム';
+  if (!key) { $('nokey').classList.remove('hide'); }
+  else {
+    loadHome();
+    if (canPush && (!isIOS || standalone) && !(ls('staff_reg') && Notification.permission === 'granted')) {
+      $('setup').classList.remove('hide'); setState('名前を選んで「通知を許可する」を押すと、牧場からのお知らせが届きます。'); loadNames();
     }
-    $('name').onchange = function () { $('name2').classList.toggle('hide', this.value !== '*'); };
-
-    async function allow() {
-      var name = $('name').value === '*' ? $('name2').value.trim() : $('name').value;
-      if (!name) { setState('<span class="ng">名前を選んでください</span>'); return; }
-      $('allow').disabled = true; setState('設定しています…');
-      try {
-        var perm = await Notification.requestPermission();
-        if (perm !== 'granted') throw new Error('通知が「許可しない」になっています。設定アプリ →「通知」→「お知らせ」で許可してください');
-        var reg = await navigator.serviceWorker.register('sw.js');
-        await navigator.serviceWorker.ready;
-        var sub = await reg.pushManager.getSubscription();
-        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID) });
-        var r = await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'pushReg', k: key, name: name, sub: sub.toJSON(), ua: navigator.userAgent }) });
-        var j = await r.json();
-        if (!j.ok) throw new Error(j.error === 'key' ? 'リンクが古いか違います' : '登録できませんでした');
-        ls('staff_name', name); ls('staff_reg', '1');
-        setState('<span class="ok">通知の設定ができました（' + name + '）。</span> 試しの通知はしばらくすると届きます。');
-        $('allow').textContent = 'もう一度設定する';
-        $('who').textContent = name;
-      } catch (e) { setState('<span class="ng">' + (e.message || e) + '</span>'); }
-      $('allow').disabled = false;
-    }
-
-    function openDb() {
-      return new Promise(function (ok, ng) {
-        var r = indexedDB.open('mf-staff', 1);
-        r.onupgradeneeded = function () { r.result.createObjectStore('notes', { keyPath: 'id', autoIncrement: true }); };
-        r.onsuccess = function () { ok(r.result); }; r.onerror = function () { ng(r.error); };
-      });
-    }
-    async function showList() {
-      try {
-        var d = await openDb();
-        var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
-        all.sort(function (a, b) { return b.at - a.at; });
-        if (!all.length) { $('list').textContent = 'まだありません'; return; }
-        $('list').innerHTML = '';
-        all.slice(0, 100).forEach(function (n) {
-          var div = document.createElement('div'); div.className = 'item';
-          var t = new Date(n.at);
-          div.innerHTML = '<div class="t"></div><div class="b"></div>';
-          div.querySelector('.t').textContent = (t.getMonth() + 1) + '/' + t.getDate() + ' ' + t.getHours() + ':' + String(t.getMinutes()).padStart(2, '0') + (n.title && n.title !== 'ミルキーファーム' ? '　' + n.title : '');
-          div.querySelector('.b').textContent = n.body;
-          if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
-          $('list').appendChild(div);
-        });
-      } catch (e) { $('list').textContent = 'この端末では履歴を表示できません'; }
-    }
-
-    (async function start() {
-      $('who').textContent = ls('staff_name');
-      showList();
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(function () {});
-        navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') showList(); });
-      }
-      if (!key) { $('nokey').classList.remove('hide'); return; }
-      if (isIOS && !standalone) { $('ios').classList.remove('hide'); return; }
-      $('setup').classList.remove('hide');
-      if (!canPush) { setState('<span class="ng">この端末・ブラウザは通知に対応していません（iPhone は iOS 16.4 以上で、ホーム画面のアイコンから開く）</span>'); $('allow').disabled = true; return; }
-      if (ls('staff_reg') && Notification.permission === 'granted') { setState('<span class="ok">通知は設定ずみです。</span>'); $('allow').textContent = 'もう一度設定する'; }
-      else setState('名前を選んで「通知を許可する」を押してください。');
-      loadNames();
-    })();
-  </script>
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); } });
+</script>
 </body>
 </html>

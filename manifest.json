@@ -1,10 +1,10 @@
 {
   "id": "/milkyfarm-staff/",
-  "name": "ミルキーファーム お知らせ",
-  "short_name": "お知らせ",
+  "name": "ミルキーファーム",
+  "short_name": "ミルキーファーム",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f2f6f9",
+  "background_color": "#F3F7FA",
   "theme_color": "#4C88AA",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
