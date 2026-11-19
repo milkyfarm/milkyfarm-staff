@@ -108,10 +108,7 @@
         <div><div class="t" id="wxt">—</div><div class="lbl" id="wxs" style="margin:0"></div></div>
         <div class="thi">THI<b id="thi">—</b></div>
       </div>
-      <div class="sep"></div>
-      <div class="lbl">今日の出勤<span class="duty hide" id="duty"></span></div>
-      <div class="prow"><span class="pk">社員</span><span class="people" id="people">—</span></div>
-      <div class="prow hide" id="partRow"><span class="pk">アルバイト</span><span class="people" id="part"></span></div>
+      <div class="hide" id="dutyRow"><div class="sep"></div><span class="duty" id="duty" style="margin-left:0"></span></div>
     </div>
 
     <div class="card hide" id="morningCard">
@@ -208,11 +205,8 @@
     $('wxt').textContent = wx ? wx[1] + (w.tmin != null && w.tmax != null ? '　' + Math.round(w.tmin) + '〜' + Math.round(w.tmax) + '℃' : '') : '—';
     $('wxs').textContent = w.rain != null ? '雨の確率 ' + w.rain + '%' : '';
     $('thi').textContent = w.thi != null ? Math.round(w.thi) : '—';
-    var a = d.attend || [], st = Array.isArray(a) ? a : (a.staff || []), pt = Array.isArray(a) ? [] : (a.part || []);
-    $('people').textContent = st.length ? st.join('・') : '—';
-    $('part').textContent = pt.map(function (x) { return x.slot ? x.name + '（' + x.slot + '）' : x.name; }).join('・');
-    $('partRow').classList.toggle('hide', !pt.length);
-    if (d.duty) { $('duty').textContent = '当番 ' + d.duty; $('duty').classList.remove('hide'); } else $('duty').classList.add('hide');
+    $('duty').textContent = d.duty ? '当番 ' + d.duty : '';
+    $('dutyRow').classList.toggle('hide', !d.duty);
     var m = d.milk || {};
     $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
     $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' : '—';
