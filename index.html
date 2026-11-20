@@ -118,6 +118,9 @@
       <div class="sec"><div class="h">👯 双子注意<span class="c" id="twinN"></span></div><div id="twin" class="lst">—</div></div>
       <div class="sep"></div>
       <div class="sec"><div class="h">💉 今日のワクチン</div><div id="vac" class="lst">—</div></div>
+      <div class="hide" id="photoBox"><div class="sep"></div>
+        <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div>
+          <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">ノート写真アプリで送る</a></div></div></div>
     </div>
 
     <div class="nums">
@@ -223,16 +226,21 @@
     $('vac').innerHTML = V.length ? V.map(function (x) { var m = String(x).match(/^【(.+)】$/); if (m) return '<div class="g">' + esc(m[1]) + '</div>'; var i = String(x).indexOf('　'); return i > 0 ? '<div class="r"><span class="no" style="min-width:5em">' + esc(x.slice(0, i)) + '</span><span>' + esc(x.slice(i + 1)) + '</span></div>' : '<div>' + esc(x) + '</div>'; }).join('') : none;
     // RS生ワクチン（11/20 大誠さん。期間中は一文・期間外は「RS生ワクチン：なし」）
     if (c.rs) $('vac').innerHTML += '<div class="g">RS生ワクチン</div><div>' + esc(String(c.rs).replace(/^RS生ワクチン[：:]?/, '') || 'なし') + '</div>';
+    // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
+    var P = c.photo || [];
+    $('photoBox').classList.toggle('hide', !P.length);
+    $('photo').innerHTML = P.map(function (x) { return '<div>' + esc(String(x).replace(/^・/, '')) + '</div>'; }).join('');
   }
+  var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
 
-  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
     if (!key) return;
     try {
       var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
       var j = await r.json();
       if (!j.ok) return;
       ls('staff_home', JSON.stringify(j));
-      drawHome(j.data); drawCow(j.cow);
+      drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes();
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
     } catch (e) {}
   }
@@ -249,8 +257,8 @@
     try {
       var d = await openDb();
       var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
-      return all.sort(function (a, b) { return b.at - a.at; });
-    } catch (e) { return []; }
+      return all.concat(srvNotes).sort(function (a, b) { return b.at - a.at; });
+    } catch (e) { return srvNotes.slice().sort(function (a, b) { return b.at - a.at; }); }
   }
   function when(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
   async function drawNotes() {
