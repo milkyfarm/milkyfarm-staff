@@ -163,7 +163,8 @@
     { name: 'ノート写真', sub: '治療・削蹄ノートを送る', url: 'https://milkyfarm.github.io/milkyfarm-note/', icon: 'note' },
     { name: '乳牛カルテ', sub: '牛ごとの病気・乳量', url: 'https://milkyfarm.github.io/milkyfarm-cow/', icon: 'cow' },
     { name: '子牛カルテ', sub: '哺乳と治療の記録', url: 'https://milkyfarm.github.io/milkyfarm-calf/', icon: 'calf' },
-    { name: '牛舎カメラ', sub: '餌槽の様子', url: 'https://milkyfarm.github.io/milkyfarm-camera/', icon: 'camera' }
+    { name: '餌槽カメラ', sub: '餌槽の様子', url: 'https://milkyfarm.github.io/milkyfarm-camera/', icon: 'camera' },
+    { name: '肥育成績', sub: '肉牛の出荷成績', url: 'https://milkyfarm.github.io/milkyfarm-hiiku/', icon: 'hiiku' }
   ];
   // 仮のアイコン（白地＋青い線＋オレンジの差し色）
   var B = '#4C88AA', O = '#E9A54E';
@@ -173,6 +174,7 @@
     cow: '<path d="M7 7c-2 0-3.5-1-4-2.5M17 7c2 0 3.5-1 4-2.5" stroke="' + B + '"/><path d="M7 6.5h10l-.8 8.5a4.2 4.2 0 0 1-8.4 0z" stroke="' + B + '"/><ellipse cx="12" cy="17.2" rx="3" ry="2" stroke="' + O + '"/><circle cx="9.7" cy="10" r=".6" fill="' + B + '"/><circle cx="14.3" cy="10" r=".6" fill="' + B + '"/>',
     calf: '<path d="M10 3h4v3l1.5 2v12a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8L10 6z" stroke="' + B + '"/><path d="M8.5 13h7" stroke="' + O + '"/><path d="M11 2h2" stroke="' + B + '"/>',
     camera: '<rect x="3" y="7" width="13" height="9" rx="2" stroke="' + B + '"/><path d="M16 10l5-2.5v8L16 13" stroke="' + B + '"/><circle cx="9.5" cy="11.5" r="2.3" stroke="' + O + '"/>',
+    hiiku: '<path d="M4 20h16" stroke="' + B + '"/><path d="M7 17v-5M12 17V8M17 17v-8" stroke="' + B + '"/><path d="M5 9l5-4 4 3 5-4" stroke="' + O + '"/>',
     app: '<rect x="4" y="4" width="16" height="16" rx="4" stroke="' + B + '"/><circle cx="12" cy="12" r="3" stroke="' + O + '"/>'
   };
   function svg(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || ICONS.app) + '</svg>'; }
