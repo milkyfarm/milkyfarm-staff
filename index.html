@@ -119,7 +119,7 @@
       <div class="sep"></div>
       <div class="sec"><div class="h">💉 今日のワクチン</div><div id="vac" class="lst">—</div></div>
       <div class="hide" id="photoBox"><div class="sep"></div>
-        <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div>
+        <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div><div id="sent" class="lst" style="margin-top:6px"></div>
           <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">ノート写真アプリで送る</a></div></div></div>
     </div>
 
@@ -239,15 +239,23 @@
     $('photo').innerHTML = P.map(function (x) { return '<div>' + esc(String(x).replace(/^・/, '')) + '</div>'; }).join('');
   }
   var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
+  // 11/20 大誠さん：届いた写真（直近3日・日と種類ごと）。誰かがもう送ったか分かるように
+  function drawSent(S) {
+    S = S || [];
+    $('sent').innerHTML = S.length ? '<div class="g">届いた写真</div>' + S.map(function (s) {
+      return '<div class="r"><span class="no" style="min-width:5.5em">' + esc(s.day + ' ' + (s.time || '')) + '</span><span>' + esc(s.kind) + ' ' + esc(s.n) + '枚</span><span class="x">' + (s.wait ? '読み取り中' : '読み取り済み') + '</span></div>';
+    }).join('') : '';
+    if (S.length) $('photoBox').classList.remove('hide');
+  }
 
-  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); drawSent(c.sent); srvNotes = c.notices || []; drawNotes(); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
     if (!key) return;
     try {
       var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
       var j = await r.json();
       if (!j.ok) return;
       ls('staff_home', JSON.stringify(j));
-      drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes();
+      drawHome(j.data); drawCow(j.cow); drawSent(j.sent); srvNotes = j.notices || []; drawNotes();
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
     } catch (e) {}
   }
