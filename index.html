@@ -17,6 +17,10 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif; }
     .wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+    /* 11/20 時計のあたりが白っぽくぼやける → iPhone は上のぼかしにページの地の色を使うので、地を帯と同じ青にして中身の下だけ明るい色に */
+    html, body { background: var(--main); }
+    .wrap { background: linear-gradient(var(--main) 0, var(--main) 240px, var(--bg) 240px); }
+    @media (min-width: 481px) { html, body { background: var(--bg); } }
     /* 11/20 ホーム画面から開くと上（時計・電池）に重なることがある → 最低 --sat ぶん下げる（JS が standalone のとき 50px を入れる） */
     .band { background: var(--main); color: #fff; padding: calc(14px + max(env(safe-area-inset-top), var(--sat, 0px))) 18px 46px; }
     .band .row { display: flex; align-items: center; gap: 10px; }
