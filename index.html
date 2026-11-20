@@ -203,8 +203,7 @@
   function dash(v) { return v === null || v === undefined || v === '' ? '—' : v; }
   function drawHome(d) {
     d = d || {};
-    $('duty').textContent = d.duty ? '当番 ' + d.duty : '';
-    $('duty').classList.toggle('hide', !d.duty);
+    // 当番の表示はやめた（11/20 大誠さん）
     var m = d.milk || {};
     $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
     $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' : '—';
@@ -222,6 +221,8 @@
     $('twinN').textContent = T.length ? T.length + '頭' : '';
     $('twin').innerHTML = T.length ? T.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="x">予定 ' + esc(x.due) + '</span><span class="' + (x.n >= 0 ? 'bad' : 'x') + '">' + (x.n > 0 ? x.n + '日すぎ' : x.n === 0 ? '今日' : 'あと' + (-x.n) + '日') + '</span></div>'; }).join('') : none;
     $('vac').innerHTML = V.length ? V.map(function (x) { var m = String(x).match(/^【(.+)】$/); if (m) return '<div class="g">' + esc(m[1]) + '</div>'; var i = String(x).indexOf('　'); return i > 0 ? '<div class="r"><span class="no" style="min-width:5em">' + esc(x.slice(0, i)) + '</span><span>' + esc(x.slice(i + 1)) + '</span></div>' : '<div>' + esc(x) + '</div>'; }).join('') : none;
+    // RS生ワクチン（11/20 大誠さん。期間中は一文・期間外は「RS生ワクチン：なし」）
+    if (c.rs) $('vac').innerHTML += '<div class="g">RS生ワクチン</div><div>' + esc(String(c.rs).replace(/^RS生ワクチン[：:]?/, '') || 'なし') + '</div>';
   }
 
   async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
