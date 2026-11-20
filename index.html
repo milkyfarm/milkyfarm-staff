@@ -247,7 +247,8 @@
   var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
   // 11/20 大誠さん：届いた写真（直近3日・日と種類ごと）。誰かがもう送ったか分かるように
   function drawSent(S) {
-    S = S || [];
+    // 11/20 大誠さん：肉牛書類（精算書・格付表）は大誠さんの書類なので社員のアプリには出さない
+    S = (S || []).filter(function (s) { return !/肉牛|精算|格付/.test(String(s.kind)); });
     $('sent').innerHTML = S.length ? '<div class="g">届いた写真</div>' + S.map(function (s) {
       return '<div class="r"><span class="no" style="min-width:5.5em">' + esc(s.day + ' ' + (s.time || '')) + '</span><span>' + esc(s.kind) + ' ' + esc(s.n) + '枚</span><span class="x">' + (s.wait ? '読み取り中' : '読み取り済み') + '</span></div>';
     }).join('') : '';
