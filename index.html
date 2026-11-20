@@ -295,8 +295,8 @@
   }
   $('name').onchange = function () { $('name2').classList.toggle('hide', this.value !== '*'); };
   async function allow() {
-    var name = $('name').value === '*' ? $('name2').value.trim() : $('name').value;
-    if (!name) { setState('<span class="ng">名前を選んでください</span>'); return; }
+    // 11/20 大誠さん：名前を選ばなくても、アプリを入れた人は全員に送る
+    var name = ls('staff_name') || 'アプリ';
     $('allow').disabled = true; setState('設定しています…');
     try {
       var perm = await Notification.requestPermission();
@@ -308,7 +308,7 @@
       var j = await (await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'pushReg', k: key, name: name, sub: sub.toJSON(), ua: navigator.userAgent }) })).json();
       if (!j.ok) throw new Error(j.error === 'key' ? 'リンクが古いか違います' : '登録できませんでした');
       ls('staff_name', name); ls('staff_reg', '1');
-      setState('<span class="ok">通知の設定ができました（' + esc(name) + '）。</span>');
+      setState('<span class="ok">通知の設定ができました。</span>');
       setTimeout(function () { $('setup').classList.add('hide'); }, 2500);
     } catch (e) { setState('<span class="ng">' + esc(e.message || e) + '</span>'); }
     $('allow').disabled = false;
@@ -327,7 +327,9 @@
   else {
     loadHome();
     if (canPush && (!isIOS || standalone) && !(ls('staff_reg') && Notification.permission === 'granted')) {
-      $('setup').classList.remove('hide'); setState('名前を選んで「通知を許可する」を押すと、牧場からのお知らせが届きます。'); loadNames();
+      $('name').classList.add('hide');
+      if (Notification.permission === 'granted') allow();   // もう許可してある端末は黙って登録
+      else { $('setup').classList.remove('hide'); setState('「通知を許可する」を押すと、牧場からのお知らせが届きます。'); }
     }
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); } });
