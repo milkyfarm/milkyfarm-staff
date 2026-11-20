@@ -17,7 +17,8 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif; }
     .wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
-    .band { background: var(--main); color: #fff; padding: calc(14px + env(safe-area-inset-top)) 18px 46px; }
+    /* 11/20 ホーム画面から開くと上（時計・電池）に重なることがある → 最低 --sat ぶん下げる（JS が standalone のとき 50px を入れる） */
+    .band { background: var(--main); color: #fff; padding: calc(14px + max(env(safe-area-inset-top), var(--sat, 0px))) 18px 46px; }
     .band .row { display: flex; align-items: center; gap: 10px; }
     .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; }
     .band .logo img { width: 40px; height: 40px; }
@@ -79,7 +80,7 @@
     /* お知らせ一覧 */
     .sheet { position: fixed; inset: 0; background: var(--bg); z-index: 10; overflow: auto; display: none; }
     .sheet.on { display: block; }
-    .sheet .top { position: sticky; top: 0; background: var(--main); color: #fff; padding: calc(14px + env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; gap: 10px; }
+    .sheet .top { position: sticky; top: 0; background: var(--main); color: #fff; padding: calc(14px + max(env(safe-area-inset-top), var(--sat, 0px))) 16px 14px; display: flex; align-items: center; gap: 10px; }
     .sheet .top button { border: 0; background: rgba(255,255,255,.16); color: #fff; font-size: 15px; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
     .sheet .in { max-width: 480px; margin: 0 auto; padding: 14px; }
     .item { padding: 10px 0; border-top: 1px solid var(--line); }
@@ -190,7 +191,8 @@
 
   var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-  var canPush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  if (standalone && isIOS) document.documentElement.style.setProperty('--sat', '50px');   // 11/20 上が時計に重なる対策
+  var canPush ='serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
   // ---- 日付 ----
   function today() { var d = new Date(); return (d.getMonth() + 1) + '月' + d.getDate() + '日（' + '日月火水木金土'[d.getDay()] + '）'; }
