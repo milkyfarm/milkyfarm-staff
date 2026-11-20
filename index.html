@@ -40,6 +40,16 @@
     .duty { margin-left: auto; background: var(--or-bg); color: #9a6420; border: 1px solid #F3DDBD; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
     .prow { display: flex; gap: 10px; align-items: baseline; margin-top: 4px; }
     .pk { flex: none; width: 64px; font-size: 12px; color: var(--sub); }
+    .sec .h { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .sec .c { background: var(--main); color: #fff; font-size: 12px; padding: 0 8px; border-radius: 999px; line-height: 20px; }
+    .sec .c:empty { display: none; }
+    .lst { font-size: 15px; line-height: 1.7; }
+    .lst .r { display: flex; gap: 10px; align-items: baseline; }
+    .lst .no { font-weight: 800; min-width: 3.2em; }
+    .lst .x { color: var(--sub); font-size: 13px; }
+    .lst .bad { color: #a8452f; font-weight: 700; font-size: 13px; }
+    .lst .g { font-size: 12px; color: var(--sub); margin-top: 4px; }
+    .lst .none { color: var(--sub); font-size: 14px; }
     .morning { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.65; }
     .morning a { color: var(--main); }
     .people { font-size: 15px; font-weight: 700; line-height: 1.7; }
@@ -102,18 +112,12 @@
       <button class="go" onclick="pasteKey()">開く</button>
     </div>
 
-    <div class="card today">
-      <div class="wx">
-        <div class="ic" id="wxi">—</div>
-        <div><div class="t" id="wxt">—</div><div class="lbl" id="wxs" style="margin:0"></div></div>
-        <div class="thi">THI<b id="thi">—</b></div>
-      </div>
-      <div class="hide" id="dutyRow"><div class="sep"></div><span class="duty" id="duty" style="margin-left:0"></span></div>
-    </div>
-
-    <div class="card hide" id="morningCard">
-      <div class="lbl">今日の連絡</div>
-      <div class="morning" id="morning"></div>
+    <div class="card today" id="cowCard">
+      <div class="sec"><div class="h">🐄 分娩予定超過<span class="c" id="lateN"></span><span class="duty hide" id="duty"></span></div><div id="late" class="lst">—</div></div>
+      <div class="sep"></div>
+      <div class="sec"><div class="h">👯 双子注意<span class="c" id="twinN"></span></div><div id="twin" class="lst">—</div></div>
+      <div class="sep"></div>
+      <div class="sec"><div class="h">💉 今日のワクチン</div><div id="vac" class="lst">—</div></div>
     </div>
 
     <div class="nums">
@@ -199,14 +203,8 @@
   function dash(v) { return v === null || v === undefined || v === '' ? '—' : v; }
   function drawHome(d) {
     d = d || {};
-    var w = d.weather || {};
-    var wx = WX[w.code] || null;
-    $('wxi').textContent = wx ? wx[0] : '—';
-    $('wxt').textContent = wx ? wx[1] + (w.tmin != null && w.tmax != null ? '　' + Math.round(w.tmin) + '〜' + Math.round(w.tmax) + '℃' : '') : '—';
-    $('wxs').textContent = w.rain != null ? '雨の確率 ' + w.rain + '%' : '';
-    $('thi').textContent = w.thi != null ? Math.round(w.thi) : '—';
     $('duty').textContent = d.duty ? '当番 ' + d.duty : '';
-    $('dutyRow').classList.toggle('hide', !d.duty);
+    $('duty').classList.toggle('hide', !d.duty);
     var m = d.milk || {};
     $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
     $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' : '—';
@@ -214,21 +212,26 @@
     $('calv').innerHTML = d.calving != null ? esc(d.calving) + '<small>頭</small>' : '—';
   }
 
-  // 朝の連絡（社員グループに朝送った1通。その日の分だけ）
-  function drawMorning(t) {
-    if (!t) { $('morningCard').classList.add('hide'); return; }
-    $('morning').innerHTML = esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
-    $('morningCard').classList.remove('hide');
+  // 分娩予定超過・双子注意・今日のワクチン（朝の牛の連絡と同じ中身。GAS の staffCow_）
+  function drawCow(c) {
+    var none = '<span class="none">なし</span>';
+    if (!c) { $('late').innerHTML = $('twin').innerHTML = $('vac').innerHTML = '—'; $('lateN').textContent = $('twinN').textContent = ''; return; }
+    var L = c.late || [], T = c.twins || [], V = c.vac || [];
+    $('lateN').textContent = L.length ? L.length + '頭' : '';
+    $('late').innerHTML = L.length ? L.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="bad">' + esc(x.n) + '日すぎ</span>' + (x.sire ? '<span class="x">' + esc(x.sire) + '</span>' : '') + '</div>'; }).join('') : none;
+    $('twinN').textContent = T.length ? T.length + '頭' : '';
+    $('twin').innerHTML = T.length ? T.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="x">予定 ' + esc(x.due) + '</span><span class="' + (x.n >= 0 ? 'bad' : 'x') + '">' + (x.n > 0 ? x.n + '日すぎ' : x.n === 0 ? '今日' : 'あと' + (-x.n) + '日') + '</span></div>'; }).join('') : none;
+    $('vac').innerHTML = V.length ? V.map(function (x) { var m = String(x).match(/^【(.+)】$/); if (m) return '<div class="g">' + esc(m[1]) + '</div>'; var i = String(x).indexOf('　'); return i > 0 ? '<div class="r"><span class="no" style="min-width:5em">' + esc(x.slice(0, i)) + '</span><span>' + esc(x.slice(i + 1)) + '</span></div>' : '<div>' + esc(x) + '</div>'; }).join('') : none;
   }
 
-  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawMorning(c.morning); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
     if (!key) return;
     try {
       var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
       var j = await r.json();
       if (!j.ok) return;
       ls('staff_home', JSON.stringify(j));
-      drawHome(j.data); drawMorning(j.morning);
+      drawHome(j.data); drawCow(j.cow);
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
     } catch (e) {}
   }
