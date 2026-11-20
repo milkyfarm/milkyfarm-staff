@@ -210,7 +210,9 @@
     var m = d.milk || {};
     $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
     $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' : '—';
-    $('headS').textContent = $('avgS').textContent = m.date ? '昨日 ' + m.date : '昨日';
+    // 11/20 何日の分か分かるように（今日の行が入っていれば今日）
+    var nd = new Date(), tmd = (nd.getMonth() + 1) + '/' + nd.getDate();
+    $('headS').textContent = $('avgS').textContent = !m.date ? '' : m.date === tmd ? '今日 ' + m.date : m.date + ' の分';
     $('calv').innerHTML = d.calving != null ? esc(d.calving) + '<small>頭</small>' : '—';
   }
 
@@ -225,7 +227,10 @@
     $('twin').innerHTML = T.length ? T.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="x">予定 ' + esc(x.due) + '</span><span class="' + (x.n >= 0 ? 'bad' : 'x') + '">' + (x.n > 0 ? x.n + '日すぎ' : x.n === 0 ? '今日' : 'あと' + (-x.n) + '日') + '</span></div>'; }).join('') : none;
     $('vac').innerHTML = V.length ? V.map(function (x) { var m = String(x).match(/^【(.+)】$/); if (m) return '<div class="g">' + esc(m[1]) + '</div>'; var i = String(x).indexOf('　'); return i > 0 ? '<div class="r"><span class="no" style="min-width:5em">' + esc(x.slice(0, i)) + '</span><span>' + esc(x.slice(i + 1)) + '</span></div>' : '<div>' + esc(x) + '</div>'; }).join('') : none;
     // RS生ワクチン（11/20 大誠さん。期間中は一文・期間外は「RS生ワクチン：なし」）
+    // 11/20 大誠さん：バイコックス（哺乳ロボ4日目の子牛）が無い日も「なし」と出す
+    if (!V.some(function (x) { return /^バイコ/.test(String(x)); })) $('vac').innerHTML += (V.indexOf('【子牛】') < 0 ? '<div class="g">子牛</div>' : '') + '<div class="r"><span class="no" style="min-width:5em">バイコ</span><span class="none">なし</span></div>';
     if (c.rs) $('vac').innerHTML += '<div class="g">RS生ワクチン</div><div>' + esc(String(c.rs).replace(/^RS生ワクチン[：:]?/, '') || 'なし') + '</div>';
+    $('vac').innerHTML += '<div class="x" style="margin-top:6px;font-size:13px">※体調不良で延期中の牛・子牛がいないか確認</div>';   // 朝のLINEと同じ一文
     // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
     var P = c.photo || [];
     $('photoBox').classList.toggle('hide', !P.length);
