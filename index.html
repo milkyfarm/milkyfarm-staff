@@ -106,6 +106,12 @@
     .ntop .it:first-of-type { border-top: 0; }
     .ntop .t { font-size: 11px; color: var(--sub); margin-right: 6px; }
     .ver { font-size: 10px; color: var(--sub); opacity: .7; }
+    /* 11/21g 今日のワクチン：区分ごとの枠 */
+    .vg { border-left: 5px solid #9AB; background: var(--bg); border-radius: 10px; padding: 6px 10px 8px; margin: 8px 0; }
+    .vgh { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+    .vg .r { display: flex; gap: 10px; align-items: baseline; font-size: 15px; line-height: 1.6; }
+    .vg .vn { font-weight: 800; min-width: 5.5em; flex: none; }
+    .vnote { margin-top: 8px; font-size: 13px; font-weight: 700; color: #9a6420; }
   </style>
 </head>
 <body>
@@ -179,7 +185,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-21f';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-21g';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -259,12 +265,23 @@
     $('late').innerHTML = L.length ? L.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="bad">' + esc(x.n) + '日すぎ</span>' + (x.sire ? '<span class="x">' + esc(x.sire) + '</span>' : '') + '</div>'; }).join('') : none;
     $('twinN').textContent = T.length ? T.length + '頭' : '';
     $('twin').innerHTML = T.length ? T.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="x">予定 ' + esc(x.due) + '</span><span class="' + (x.n >= 0 ? 'bad' : 'x') + '">' + (x.n > 0 ? x.n + '日すぎ' : x.n === 0 ? '今日' : 'あと' + (-x.n) + '日') + '</span></div>'; }).join('') : none;
-    $('vac').innerHTML = V.length ? V.map(function (x) { var m = String(x).match(/^【(.+)】$/); if (m) return '<div class="g">' + esc(m[1]) + '</div>'; var i = String(x).indexOf('　'); return i > 0 ? '<div class="r"><span class="no" style="min-width:5em">' + esc(x.slice(0, i)) + '</span><span>' + esc(x.slice(i + 1)) + '</span></div>' : '<div>' + esc(x) + '</div>'; }).join('') : none;
-    // RS生ワクチン（11/20 大誠さん。期間中は一文・期間外は「RS生ワクチン：なし」）
-    // 11/20 大誠さん：バイコックス（哺乳ロボ4日目の子牛）が無い日も「なし」と出す
-    if (!V.some(function (x) { return /^バイコ/.test(String(x)); })) $('vac').innerHTML += (V.indexOf('【子牛】') < 0 ? '<div class="g">子牛</div>' : '') + '<div class="r"><span class="no" style="min-width:5em">バイコ</span><span class="none">なし</span></div>';
-    if (c.rs) $('vac').innerHTML += '<div class="g">RS生ワクチン</div><div>' + esc(String(c.rs).replace(/^RS生ワクチン[：:]?/, '') || 'なし') + '</div>';
-    $('vac').innerHTML += '<div class="x" style="margin-top:6px;font-size:13px">※体調不良で延期中の牛・子牛がいないか確認</div>';   // 朝のLINEと同じ一文
+    // 11/21 大誠さん：今日のワクチンを見やすく。区分（乾乳・搾乳・子牛）ごとに色の帯の枠・太い見出し。0頭の区分は出さない。
+    // どの行も「薬の名前（太字）　牛番号」の同じ並び。RS生ワクチンは子牛の区分の1行。バイコは無い日も「なし」（11/20 大誠さん）
+    var groups = [], cur = null;
+    V.forEach(function (x) { var m = String(x).match(/^【(.+)】$/); if (m) { cur = { name: m[1], rows: [] }; groups.push(cur); return; } if (!cur) { cur = { name: '', rows: [] }; groups.push(cur); } var i = String(x).indexOf('　'); cur.rows.push(i > 0 ? [x.slice(0, i), x.slice(i + 1)] : [x, '']); });
+    var calf = groups.filter(function (g) { return g.name === '子牛'; })[0];
+    if (!calf) { calf = { name: '子牛', rows: [] }; groups.push(calf); }
+    if (!calf.rows.some(function (r) { return /^バイコ/.test(r[0]); })) calf.rows.push(['バイコ', '']);
+    var rs = String(c.rs || '');
+    if (rs && !/なし$/.test(rs)) calf.rows.push(['RS生ワク', rs.replace(/^RS生ワクチン(接種期間)?[：:]?/, '').replace(/^搾乳牛舎側の子牛、?/, '搾乳牛舎側の子牛・')]);
+    groups = groups.filter(function (g) { return g.rows.some(function (r) { return r[1]; }) || g.name === '子牛'; });
+    var COL = { '乾乳': '#E9A54E', '搾乳': '#4C88AA', '子牛': '#5FA36B' };
+    $('vac').innerHTML = groups.length ? groups.map(function (g) {
+      return '<div class="vg" style="border-left-color:' + (COL[g.name] || '#9AB') + '"><div class="vgh" style="color:' + (COL[g.name] || '#567') + '">' + esc(g.name) + '</div>' +
+        g.rows.map(function (r) { return '<div class="r"><span class="vn">' + esc(r[0]) + '</span><span>' + (r[1] ? esc(r[1]) : '<span class="none">なし</span>') + '</span></div>'; }).join('') + '</div>';
+    }).join('') : none;
+    // 延期を記録する仕組みはまだ無いので、決まり文句ではなく短く言い切る（11/21 大誠さん）
+    $('vac').innerHTML += '<div class="vnote">体調が悪い牛・子牛は打たずに、治ってから打つ</div>';
     // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
     // 11/21 大誠さん：届いて読み取られたお願いは消える（GAS staffPhotoLive_）。全部消えたらカードごと出さない
     var P = c.photo || [];
