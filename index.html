@@ -185,7 +185,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-21h';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-21i';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -281,7 +281,7 @@
         g.rows.map(function (r) { return '<div class="r"><span class="vn">' + esc(r[0]) + '</span><span>' + (r[1] ? esc(r[1]) : '<span class="none">なし</span>') + '</span></div>'; }).join('') + '</div>';
     }).join('') : none;
     // 11/21h 大誠さん：注意書きは元の文のまま。RS生ワクだけにかかって見えないよう、区分の枠の外に線で区切ってカードの一番下に
-    $('vac').innerHTML += '<div class="vnote">※体調不良で延期中の牛・子牛がいないか確認</div>';
+    $('vac').innerHTML += '<div class="vnote">※この一覧には、体調不良で延期した牛・子牛は載っていません。延期した牛がいないか確認してください</div>';
     // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
     // 11/21 大誠さん：届いて読み取られたお願いは消える（GAS staffPhotoLive_）。全部消えたらカードごと出さない
     var P = c.photo || [];
