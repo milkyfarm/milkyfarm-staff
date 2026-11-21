@@ -111,7 +111,7 @@
     .vgh { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
     .vg .r { display: flex; gap: 10px; align-items: baseline; font-size: 15px; line-height: 1.6; }
     .vg .vn { font-weight: 800; min-width: 5.5em; flex: none; }
-    .vnote { margin-top: 8px; font-size: 13px; font-weight: 700; color: #9a6420; }
+    .vnote { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink); }
   </style>
 </head>
 <body>
@@ -185,7 +185,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-21g';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-21h';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -280,8 +280,8 @@
       return '<div class="vg" style="border-left-color:' + (COL[g.name] || '#9AB') + '"><div class="vgh" style="color:' + (COL[g.name] || '#567') + '">' + esc(g.name) + '</div>' +
         g.rows.map(function (r) { return '<div class="r"><span class="vn">' + esc(r[0]) + '</span><span>' + (r[1] ? esc(r[1]) : '<span class="none">なし</span>') + '</span></div>'; }).join('') + '</div>';
     }).join('') : none;
-    // 延期を記録する仕組みはまだ無いので、決まり文句ではなく短く言い切る（11/21 大誠さん）
-    $('vac').innerHTML += '<div class="vnote">体調が悪い牛・子牛は打たずに、治ってから打つ</div>';
+    // 11/21h 大誠さん：注意書きは元の文のまま。RS生ワクだけにかかって見えないよう、区分の枠の外に線で区切ってカードの一番下に
+    $('vac').innerHTML += '<div class="vnote">※体調不良で延期中の牛・子牛がいないか確認</div>';
     // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
     // 11/21 大誠さん：届いて読み取られたお願いは消える（GAS staffPhotoLive_）。全部消えたらカードごと出さない
     var P = c.photo || [];
