@@ -18,7 +18,7 @@
     html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif; }
     .wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
     /* 11/20 時計のあたりが白っぽくぼやける → iPhone は上のぼかしにページの地の色を使うので、地を帯と同じ青にして中身の下だけ明るい色に */
-    html, body { background: var(--main); }
+    html, body { background: var(--bg); }   /* 11/21 上は固定の青い帯（.topbar）が受け持つので、地は明るい色に戻した（下が青くならないように） */
     .wrap { background: linear-gradient(var(--main) 0, var(--main) 240px, var(--bg) 240px); }
     @media (min-width: 481px) { html, body { background: var(--bg); } }
     /* 11/20 ホーム画面から開くと上（時計・電池）に重なることがある → 最低 --sat ぶん下げる（JS が standalone のとき 50px を入れる） */
@@ -177,7 +177,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-21c';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-21d';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
