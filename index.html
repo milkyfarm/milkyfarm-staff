@@ -22,13 +22,13 @@
     .wrap { background: linear-gradient(var(--main) 0, var(--main) 240px, var(--bg) 240px); }
     @media (min-width: 481px) { html, body { background: var(--bg); } }
     /* 11/20 ホーム画面から開くと上（時計・電池）に重なることがある → 最低 --sat ぶん下げる（JS が standalone のとき 50px を入れる） */
-    .band { background: var(--main); color: #fff; padding: calc(8px + max(env(safe-area-inset-top, 0px), var(--sat, 0px))) 18px 46px; }
+    .band { background: var(--main); color: #fff; padding: calc(22px + max(env(safe-area-inset-top, 0px), var(--sat, 0px))) 18px 46px;   /* 11/21e iOS の上の端のぼかし（帯より少し下まで）にロゴがかからないように */ }
     .band .row { display: flex; align-items: center; gap: 10px; }
-    .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; }
+    .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; box-shadow: none; filter: none; }
     .band .logo img { width: 40px; height: 40px; }
     .band .wm { height: 24px; width: auto; display: block; }
     .band .name { font-size: 18px; font-weight: 700; letter-spacing: .04em; }
-    .bell { margin-left: auto; position: relative; width: 46px; height: 46px; flex: none; border: 0; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; cursor: pointer; }
+    .bell { margin-left: auto; position: relative; width: 46px; height: 46px; flex: none; border: 0; border-radius: 50%; background: #3f7798; display: grid; place-items: center; cursor: pointer; }   /* 11/21e 半透明をやめた */
     .bell svg { width: 22px; height: 22px; }
     .bell .n { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--or); color: #fff; font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
     .date { margin-top: 10px; font-size: 14px; opacity: .92; }
@@ -74,6 +74,7 @@
     .notice .t { flex: none; font-size: 11px; color: var(--sub); }
     h2 { font-size: 14px; color: var(--sub); margin: 0 4px 8px; font-weight: 700; }
     .apps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .appsCard { padding: 12px; } .appsCard .h2in { font-size: 14px; color: var(--sub); font-weight: 700; margin: 0 2px 8px; } .appsCard .app { background: var(--bg); border: 0; }
     .app { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; text-decoration: none; color: var(--ink); min-height: 58px; }
     .app:active { background: #eaf2f7; }
     .app .i { flex: none; width: 36px; height: 36px; border-radius: 10px; background: #EEF5F9; display: grid; place-items: center; }
@@ -98,7 +99,7 @@
     .item.new .t::after { content: "新"; margin-left: 6px; background: var(--or); color: #fff; font-size: 10px; padding: 0 5px; border-radius: 6px; }
     .hide { display: none !important; }
     /* 11/21 大誠さん（iPhone 17 Pro）：スクロールすると中身が時計・電池の帯の下に流れ込む → 帯の高さぶん青を固定で敷き、中身はその下で切れる */
-    .topbar { position: fixed; top: 0; left: 0; right: 0; height: max(env(safe-area-inset-top, 0px), var(--sat, 0px)); background: var(--main); z-index: 20; }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; height: max(env(safe-area-inset-top, 0px), var(--sat, 0px)); background: #4C88AA; opacity: 1; z-index: 20; }   /* 11/21e 不透明・Dynamic Island の下まで */
     .ntop { padding: 12px 14px; margin-bottom: 12px; border: 1px solid #F3DDBD; background: var(--or-bg); cursor: pointer; }
     .ntop .h { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
     .ntop .it { font-size: 14px; line-height: 1.55; padding: 4px 0; border-top: 1px dashed #F3DDBD; }
@@ -156,8 +157,8 @@
         <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div><div id="sent" class="lst" style="margin-top:6px"></div>
           <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">写真取込アプリで送る</a></div></div>
 
-    <h2>アプリ</h2>
-    <div class="apps" id="apps"></div>
+    <!-- 11/21e 大誠さん：アプリの一覧は写真のお願いとは別のカード -->
+    <div class="card appsCard"><div class="h2in">アプリ</div><div class="apps" id="apps"></div></div>
 
     <div class="card setup hide" id="setup">
       <b>通知を受け取る</b>
@@ -177,7 +178,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-21d';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-21e';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -214,7 +215,7 @@
   var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   // 11/21 大誠さん（iPhone 17 Pro）：まだ時計の帯にかかる → ホーム画面から開いたときは最低 64px（Dynamic Island の機種の帯の高さ）＋16px 下げる。?sa=1 で試せる
-  if ((standalone && isIOS) || /[?&]sa=1/.test(location.search)) document.documentElement.style.setProperty('--sat', '64px');
+  if ((standalone && isIOS) || /[?&]sa=1/.test(location.search)) document.documentElement.style.setProperty('--sat', '66px');   // 11/21e Dynamic Island の下まで（最低62px＋少し）
   var canPush ='serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
   // ---- 日付 ----
