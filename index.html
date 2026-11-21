@@ -22,7 +22,7 @@
     .wrap { background: linear-gradient(var(--main) 0, var(--main) 240px, var(--bg) 240px); }
     @media (min-width: 481px) { html, body { background: var(--bg); } }
     /* 11/20 ホーム画面から開くと上（時計・電池）に重なることがある → 最低 --sat ぶん下げる（JS が standalone のとき 50px を入れる） */
-    .band { background: var(--main); color: #fff; padding: calc(16px + max(env(safe-area-inset-top, 0px), var(--sat, 0px))) 18px 46px; }
+    .band { background: var(--main); color: #fff; padding: calc(8px + max(env(safe-area-inset-top, 0px), var(--sat, 0px))) 18px 46px; }
     .band .row { display: flex; align-items: center; gap: 10px; }
     .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; }
     .band .logo img { width: 40px; height: 40px; }
@@ -97,9 +97,18 @@
     .item .b { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.6; }
     .item.new .t::after { content: "新"; margin-left: 6px; background: var(--or); color: #fff; font-size: 10px; padding: 0 5px; border-radius: 6px; }
     .hide { display: none !important; }
+    /* 11/21 大誠さん（iPhone 17 Pro）：スクロールすると中身が時計・電池の帯の下に流れ込む → 帯の高さぶん青を固定で敷き、中身はその下で切れる */
+    .topbar { position: fixed; top: 0; left: 0; right: 0; height: max(env(safe-area-inset-top, 0px), var(--sat, 0px)); background: var(--main); z-index: 20; }
+    .ntop { padding: 12px 14px; margin-bottom: 12px; border: 1px solid #F3DDBD; background: var(--or-bg); cursor: pointer; }
+    .ntop .h { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .ntop .it { font-size: 14px; line-height: 1.55; padding: 4px 0; border-top: 1px dashed #F3DDBD; }
+    .ntop .it:first-of-type { border-top: 0; }
+    .ntop .t { font-size: 11px; color: var(--sub); margin-right: 6px; }
+    .ver { font-size: 10px; color: var(--sub); opacity: .7; }
   </style>
 </head>
 <body>
+<div class="topbar"></div>
 <div class="wrap">
   <div class="band">
     <div class="row">
@@ -121,6 +130,9 @@
       <button class="go" onclick="pasteKey()">開く</button>
     </div>
 
+    <!-- 11/21 大誠さん：お知らせ（今日の分）は一番上。無いときは出さない。ベルの中の7日分の一覧はそのまま -->
+    <div class="card ntop hide" id="ntop" onclick="openList()"><div class="h">🔔 今日のお知らせ<span class="c" id="ntopN"></span></div><div id="ntopL"></div></div>
+
     <div class="card today" id="cowCard">
       <div class="sec"><div class="h">🐄 分娩予定超過<span class="c" id="lateN"></span><span class="duty hide" id="duty"></span></div><div id="late" class="lst">—</div></div>
       <div class="sep"></div>
@@ -129,9 +141,6 @@
       <div class="sec"><div class="h">👯 双子注意<span class="c" id="twinN"></span></div><div id="twin" class="lst">—</div></div>
       <div class="sep"></div>
       <div class="sec"><div class="h">💉 今日のワクチン</div><div id="vac" class="lst">—</div></div>
-      <div class="hide" id="photoBox"><div class="sep"></div>
-        <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div><div id="sent" class="lst" style="margin-top:6px"></div>
-          <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">写真取込アプリで送る</a></div></div></div>
     </div>
 
     <!-- 11/21 大誠さん：搾乳頭数・平均乳量・出荷乳量・体細胞を1枚のカードに2×2。前の週の平均より上がった・下がったを矢印で（体細胞は上がったら注意の色）。数字には必ず日付 -->
@@ -142,10 +151,10 @@
       <div class="num"><div class="k">体細胞</div><div class="v" id="scc">—</div><div class="s" id="sccS"></div></div>
     </div>
 
-    <div class="notice" onclick="openList()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E9A54E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-      <div class="b" id="lastB">お知らせはまだありません</div><div class="t" id="lastT"></div>
-    </div>
+
+    <div class="card hide" id="photoBox">
+        <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div><div id="sent" class="lst" style="margin-top:6px"></div>
+          <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">写真取込アプリで送る</a></div></div>
 
     <h2>アプリ</h2>
     <div class="apps" id="apps"></div>
@@ -168,6 +177,7 @@
 </div>
 
 <script>
+  var VER = '2026-11-21c';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -307,7 +317,12 @@
     var all = await notes(), seen = Number(ls('staff_seen') || 0);
     var un = all.filter(function (n) { return n.at > seen; }).length;
     $('unread').textContent = un > 99 ? '99+' : un; $('unread').classList.toggle('hide', !un);
-    if (all.length) { $('lastB').textContent = all[0].body.split('\n')[0]; $('lastT').textContent = when(all[0].at); }
+    // 11/21 大誠さん：今日のお知らせは一番上のカードに（無いときは出さない）
+    var t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    var td = all.filter(function (n) { return n.at >= t0.getTime(); });
+    $('ntop').classList.toggle('hide', !td.length);
+    $('ntopN').textContent = td.length ? td.length + '件' : '';
+    $('ntopL').innerHTML = td.slice(0, 3).map(function (n) { var d = new Date(n.at); return '<div class="it"><span class="t">' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + '</span>' + esc(String(n.body).split('\n')[0]) + '</div>'; }).join('') + (td.length > 3 ? '<div class="it x">ほか' + (td.length - 3) + '件（押すと全部）</div>' : '');
     if (!all.length) { $('list').textContent = 'まだありません'; return; }
     $('list').innerHTML = '';
     all.slice(0, 100).forEach(function (n) {
@@ -365,6 +380,16 @@
     navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') drawNotes(); });
   }
   if (standalone) $('foot').textContent = '(有)ミルキーファーム';
+  $('foot').innerHTML += '<div class="ver">版 ' + VER + '</div>';
+  // 11/21 ホーム画面のアプリが古い版を出し続けないように：開くたび・戻るたびに今の版を見て、違えば読み直す
+  async function verCheck() {
+    try {
+      var t = await (await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' })).text();
+      var m = t.match(/var VER = '([^']+)'/);
+      if (m && m[1] !== VER && ls('ver_reloaded') !== m[1]) { ls('ver_reloaded', m[1]); location.reload(); }
+    } catch (e) {}
+  }
+  verCheck();
   if (!key) { $('nokey').classList.remove('hide'); }
   else {
     loadHome();
@@ -374,7 +399,7 @@
       else { $('setup').classList.remove('hide'); setState('「通知を許可する」を押すと、牧場からのお知らせが届きます。'); }
     }
   }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); } });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); verCheck(); } });
 </script>
 </body>
 </html>
