@@ -22,17 +22,17 @@
     .wrap { background: linear-gradient(var(--main) 0, var(--main) 240px, var(--bg) 240px); }
     @media (min-width: 481px) { html, body { background: var(--bg); } }
     /* 11/20 ホーム画面から開くと上（時計・電池）に重なることがある → 最低 --sat ぶん下げる（JS が standalone のとき 50px を入れる） */
-    .band { background: var(--main); color: #fff; padding: calc(14px + max(env(safe-area-inset-top), var(--sat, 0px))) 18px 46px; }
+    .band { background: var(--main); color: #fff; padding: calc(16px + max(env(safe-area-inset-top, 0px), var(--sat, 0px))) 18px 46px; }
     .band .row { display: flex; align-items: center; gap: 10px; }
     .band .logo { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; }
     .band .logo img { width: 40px; height: 40px; }
     .band .wm { height: 24px; width: auto; display: block; }
     .band .name { font-size: 18px; font-weight: 700; letter-spacing: .04em; }
-    .bell { margin-left: auto; position: relative; width: 42px; height: 42px; border: 0; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; cursor: pointer; }
+    .bell { margin-left: auto; position: relative; width: 46px; height: 46px; flex: none; border: 0; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; cursor: pointer; }
     .bell svg { width: 22px; height: 22px; }
     .bell .n { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--or); color: #fff; font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
     .date { margin-top: 10px; font-size: 14px; opacity: .92; }
-    main { padding: 0 14px 30px; margin-top: -32px; }
+    main { padding: 0 14px calc(30px + env(safe-area-inset-bottom, 0px)); margin-top: -32px; }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; }
     .today { box-shadow: 0 6px 18px rgba(31,58,74,.08); }
     .wx { display: flex; align-items: center; gap: 12px; }
@@ -59,6 +59,10 @@
     .morning a { color: var(--main); }
     .people { font-size: 15px; font-weight: 700; line-height: 1.7; }
     .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .nums4 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+    .nums4 .num { border: 0; background: var(--bg); padding: 8px 6px; }
+    .num .ar { font-size: 13px; font-weight: 800; margin-left: 3px; color: var(--sub); }
+    .num .ar.warn { color: #a8452f; }
     .num { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 8px; text-align: center; }
     .num .k { font-size: 11px; color: var(--sub); }
     .num .v { font-size: 22px; font-weight: 800; margin-top: 2px; }
@@ -84,7 +88,7 @@
     /* お知らせ一覧 */
     .sheet { position: fixed; inset: 0; background: var(--bg); z-index: 10; overflow: auto; display: none; }
     .sheet.on { display: block; }
-    .sheet .top { position: sticky; top: 0; background: var(--main); color: #fff; padding: calc(14px + max(env(safe-area-inset-top), var(--sat, 0px))) 16px 14px; display: flex; align-items: center; gap: 10px; }
+    .sheet .top { position: sticky; top: 0; background: var(--main); color: #fff; padding: calc(16px + max(env(safe-area-inset-top, 0px), var(--sat, 0px))) 16px 14px; display: flex; align-items: center; gap: 10px; }
     .sheet .top button { border: 0; background: rgba(255,255,255,.16); color: #fff; font-size: 15px; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
     .sheet .in { max-width: 480px; margin: 0 auto; padding: 14px; }
     .item { padding: 10px 0; border-top: 1px solid var(--line); }
@@ -120,6 +124,8 @@
     <div class="card today" id="cowCard">
       <div class="sec"><div class="h">🐄 分娩予定超過<span class="c" id="lateN"></span><span class="duty hide" id="duty"></span></div><div id="late" class="lst">—</div></div>
       <div class="sep"></div>
+      <div class="sec"><div class="h">🗓 分娩予定（7日以内）<span class="c" id="soonN"></span></div><div id="soon" class="lst">—</div></div>
+      <div class="sep"></div>
       <div class="sec"><div class="h">👯 双子注意<span class="c" id="twinN"></span></div><div id="twin" class="lst">—</div></div>
       <div class="sep"></div>
       <div class="sec"><div class="h">💉 今日のワクチン</div><div id="vac" class="lst">—</div></div>
@@ -128,10 +134,12 @@
           <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">写真取込アプリで送る</a></div></div></div>
     </div>
 
-    <div class="nums">
-      <div class="num"><div class="k">搾乳頭数</div><div class="v" id="head">—</div><div class="s" id="headS">昨日</div></div>
-      <div class="num"><div class="k">平均乳量</div><div class="v" id="avg">—</div><div class="s" id="avgS">昨日</div></div>
-      <div class="num"><div class="k">分娩予定</div><div class="v" id="calv">—</div><div class="s">今週</div></div>
+    <!-- 11/21 大誠さん：搾乳頭数・平均乳量・出荷乳量・体細胞を1枚のカードに2×2。前の週の平均より上がった・下がったを矢印で（体細胞は上がったら注意の色）。数字には必ず日付 -->
+    <div class="card nums4">
+      <div class="num"><div class="k">搾乳頭数</div><div class="v" id="head">—</div><div class="s" id="headS"></div></div>
+      <div class="num"><div class="k">平均乳量</div><div class="v" id="avg">—</div><div class="s" id="avgS"></div></div>
+      <div class="num"><div class="k">出荷乳量</div><div class="v" id="ship">—</div><div class="s" id="shipS"></div></div>
+      <div class="num"><div class="k">体細胞</div><div class="v" id="scc">—</div><div class="s" id="sccS"></div></div>
     </div>
 
     <div class="notice" onclick="openList()">
@@ -195,7 +203,8 @@
 
   var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-  if (standalone && isIOS) document.documentElement.style.setProperty('--sat', '50px');   // 11/20 上が時計に重なる対策
+  // 11/21 大誠さん（iPhone 17 Pro）：まだ時計の帯にかかる → ホーム画面から開いたときは最低 64px（Dynamic Island の機種の帯の高さ）＋16px 下げる。?sa=1 で試せる
+  if ((standalone && isIOS) || /[?&]sa=1/.test(location.search)) document.documentElement.style.setProperty('--sat', '64px');
   var canPush ='serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
   // ---- 日付 ----
@@ -215,13 +224,18 @@
   function drawHome(d) {
     d = d || {};
     // 当番の表示はやめた（11/20 大誠さん）
-    var m = d.milk || {};
-    $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' : '—';
-    $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' : '—';
-    // 11/20 何日の分か分かるように（今日の行が入っていれば今日）
+    var m = d.milk || {}, pv = m.prev || {};
+    // 矢印：前の週の平均より 0.5%以上 上なら↑・下なら↓（体細胞は1つ前の検査と比べ、上がったら注意の色）
+    function ar(v, p, bad) { if (v == null || p == null) return ''; var r = (v - p) / p; if (Math.abs(r) < 0.005) return '<span class="ar">→</span>'; var up = r > 0; return '<span class="ar' + (bad && up ? ' warn' : '') + '">' + (up ? '↑' : '↓') + '</span>'; }
+    $('head').innerHTML = m.head != null ? esc(m.head) + '<small>頭</small>' + ar(m.head, pv.head) : '—';
+    $('avg').innerHTML = m.avg != null ? esc(Number(m.avg).toFixed(1)) + '<small>kg</small>' + ar(m.avg, pv.avg) : '—';
+    $('ship').innerHTML = m.ship != null ? esc(Number(m.ship).toLocaleString()) + '<small>kg</small>' + ar(m.ship, pv.ship) : '—';
+    var sc = m.scc || {};
+    $('scc').innerHTML = sc.v != null ? esc(sc.v) + '<small>万</small>' + ar(sc.v, sc.prev, true) : '—';
+    // 11/20 何日の分か分かるように（今日の行が入っていれば今日）。失敗集14：数字には必ずいつの値か
     var nd = new Date(), tmd = (nd.getMonth() + 1) + '/' + nd.getDate();
-    $('headS').textContent = $('avgS').textContent = !m.date ? '' : m.date === tmd ? '今日 ' + m.date : m.date + ' の分';
-    $('calv').innerHTML = d.calving != null ? esc(d.calving) + '<small>頭</small>' : '—';
+    $('headS').textContent = $('avgS').textContent = $('shipS').textContent = !m.date ? '' : m.date === tmd ? '今日 ' + m.date : m.date + ' の分';
+    $('sccS').textContent = sc.date ? sc.date + ' の検査' : '';
   }
 
   // 分娩予定超過・双子注意・今日のワクチン（朝の牛の連絡と同じ中身。GAS の staffCow_）
@@ -240,9 +254,15 @@
     if (c.rs) $('vac').innerHTML += '<div class="g">RS生ワクチン</div><div>' + esc(String(c.rs).replace(/^RS生ワクチン[：:]?/, '') || 'なし') + '</div>';
     $('vac').innerHTML += '<div class="x" style="margin-top:6px;font-size:13px">※体調不良で延期中の牛・子牛がいないか確認</div>';   // 朝のLINEと同じ一文
     // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
+    // 11/21 大誠さん：届いて読み取られたお願いは消える（GAS staffPhotoLive_）。全部消えたらカードごと出さない
     var P = c.photo || [];
     $('photoBox').classList.toggle('hide', !P.length);
     $('photo').innerHTML = P.map(function (x) { return '<div>' + esc(String(x).replace(/^・/, '')) + '</div>'; }).join('');
+    $('sent').innerHTML = P.length && c.photoNote ? '<div class="x">' + esc(c.photoNote) + '</div>' : '';
+    // 11/21 分娩予定（今日から7日以内・まだ分娩していない。予定日を過ぎた牛は分娩予定超過）
+    var S = c.soon || [];
+    $('soonN').textContent = S.length ? S.length + '頭' : '';
+    $('soon').innerHTML = !c.soon ? '—' : S.length ? S.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="x">予定 ' + esc(x.due) + '</span><span class="x">' + (x.n === 0 ? '今日' : 'あと' + (-x.n) + '日') + '</span></div>'; }).join('') : none;
   }
   var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
   // 11/20 大誠さん：届いた写真（直近3日・日と種類ごと）。誰かがもう送ったか分かるように
@@ -255,14 +275,14 @@
     if (S.length) $('photoBox').classList.remove('hide');
   }
 
-  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); drawSent(c.sent); srvNotes = c.notices || []; drawNotes(); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
     if (!key) return;
     try {
       var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
       var j = await r.json();
       if (!j.ok) return;
       ls('staff_home', JSON.stringify(j));
-      drawHome(j.data); drawCow(j.cow); drawSent(j.sent); srvNotes = j.notices || []; drawNotes();
+      drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes();
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
     } catch (e) {}
   }
