@@ -189,7 +189,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-23f';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-23g';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -297,7 +297,18 @@
   var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
   // ---- 11/23 台帳の済印（GAS staffStamps_ / staffStamp_）----
   var STAMP = /^【トレサ届出 済み】/, STAMP_HEAD = '【トレサ届出 済み】台帳に済印をお願いします';
-  function notStamp(n) { return !STAMP.test(String(n.body || '').trim()); }
+  // 11/23 大誠さん「写真のお願いが2件・試しが消えない」：お知らせは サーバー（入口のお知らせ）と 端末に届いたプッシュの記録 の2つから作っている。
+  // 済印・写真のお願いは専用の1件（stampNotes）で出すので、プッシュの記録・シートの行の方は出さない。【試し】も出さない
+  var JUNK = /^(📷\s*(ノート)?写真のお願い|【試し】)/;
+  function notStamp(n) { var b = String(n.body || '').trim(); return !STAMP.test(b) && !JUNK.test(b); }
+  // 端末の記録の掃除：出さないもの（済印・写真のお願い・試し）と、8日より前のもの（サーバーは7日分）を消す
+  async function purgeNotes() {
+    try {
+      var d = await openDb(), old = Date.now() - 8 * 864e5;
+      var tx = d.transaction('notes', 'readwrite'), st = tx.objectStore('notes'), q = st.openCursor();
+      q.onsuccess = function () { var c = q.result; if (!c) return; var n = c.value || {}; if (!notStamp(n) || !(n.at >= old)) c.delete(); c.continue(); };
+    } catch (e) {}
+  }
   function cowLine(s) { return esc(s).replace(/(\d{5})(\d{4})(\d)/, '$1<b style="font-size:1.15em">$2</b>$3'); }
   function md(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
   var stampNow = { todo: [], done: [] };
@@ -457,6 +468,7 @@
   // ---- はじめ ----
   drawApps(APPS0);
   drawHome(null);
+  purgeNotes();
   drawNotes();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
