@@ -141,6 +141,12 @@
     <!-- 11/21 大誠さん：お知らせ（今日の分）は一番上。無いときは出さない。ベルの中の7日分の一覧はそのまま -->
     <div class="card ntop hide" id="ntop" onclick="openList()"><div class="h">🔔 今日のお知らせ<span class="c" id="ntopN"></span></div><div id="ntopL"></div></div>
 
+    <!-- 11/23 大誠さん：台帳の済印。誰かが「済印を押した」を押すまで残る（押すと確認が出る＝2重チェック）。済んだものは下で見返せる・戻せる -->
+    <div class="card hide" id="stampBox" style="border-left:6px solid #E9A54E">
+      <div class="sec"><div class="h">🖊 台帳の済印 まだ<span class="c" id="stampN"></span></div><div id="stampL"></div>
+        <details id="stampD" class="hide" style="margin-top:8px"><summary class="x" style="font-size:13px;cursor:pointer">済んだもの</summary><div id="stampDL"></div></details></div>
+    </div>
+
     <div class="card today" id="cowCard">
       <div class="sec"><div class="h">🐄 分娩予定超過<span class="c" id="lateN"></span><span class="duty hide" id="duty"></span></div><div id="late" class="lst">—</div></div>
       <div class="sep"></div>
@@ -180,13 +186,20 @@
   </main>
 </div>
 
+<div id="ask" style="display:none;position:fixed;inset:0;z-index:40;background:rgba(22,48,63,.45);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:18px;padding:18px 18px 14px;max-width:420px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.25)">
+    <b id="askT" style="font-size:17px"></b><div id="askL" style="margin:10px 0 4px;font-size:15px;line-height:1.7"></div>
+    <div style="display:flex;gap:10px;margin-top:12px"><button id="askN" style="flex:1;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:#e9eef2;color:#16303f">まだ</button><button id="askY" style="flex:1;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:#2f6b3a;color:#fff">押した</button></div>
+  </div>
+</div>
+
 <div class="sheet" id="sheet">
   <div class="top"><b style="font-size:17px">お知らせ</b><button style="margin-left:auto" onclick="closeList()">閉じる</button></div>
   <div class="in"><div class="card" id="list">まだありません</div></div>
 </div>
 
 <script>
-  var VER = '2026-11-23b';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-23d';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -295,6 +308,61 @@
     $('soon').innerHTML = !c.soon ? '—' : S.length ? S.map(function (x) { return '<div class="r"><span class="no">' + esc(x.no) + '</span><span class="x">予定 ' + esc(x.due) + '</span><span class="x">' + (x.n === 0 ? '今日' : 'あと' + (-x.n) + '日') + '</span></div>'; }).join('') : none;
   }
   var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
+  // ---- 11/23 台帳の済印（GAS staffStamps_ / staffStamp_）----
+  var STAMP = /^【トレサ届出 済み】/;
+  function notStamp(n) { return !STAMP.test(String(n.body || '').trim()); }
+  function cowLine(s) { return esc(s).replace(/(\d{5})(\d{4})(\d)/, '$1<b style="font-size:1.15em">$2</b>$3'); }
+  function md(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  var stampNow = { todo: [], done: [] };
+  function drawStamps(S) {
+    stampNow = S || { todo: [], done: [] };
+    var T = stampNow.todo || [], D = stampNow.done || [];
+    $('stampBox').classList.toggle('hide', !T.length && !D.length);
+    $('stampN').textContent = T.length ? T.length + '件' : '';
+    $('stampBox').style.borderLeftColor = T.length ? '#E9A54E' : '#5FA36B';
+    $('stampL').innerHTML = T.length ? T.map(function (x, i) {
+      return '<div style="padding:8px 0;' + (i ? 'border-top:1px solid var(--line)' : '') + '"><div class="x" style="font-size:12px">' + md(x.at) + ' に届け出</div>' +
+        x.lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join('') +
+        '<button class="go" style="background:#2f6b3a" onclick="stampAsk(\'' + esc(x.id) + '\')">済印を押した</button></div>';
+    }).join('') : '<div class="x">いま押す済印はありません</div>';
+    $('stampD').classList.toggle('hide', !D.length);
+    $('stampDL').innerHTML = D.map(function (x) {
+      return '<div style="padding:8px 0;border-top:1px solid var(--line);font-size:14px"><div class="x" style="font-size:12px">' + esc(x.by) + '　' + md(x.doneAt) + ' に済</div>' +
+        x.lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join('') +
+        '<button onclick="stampUndo(\'' + esc(x.id) + '\')" style="margin-top:6px;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;color:#5d7383">まちがえた（まだに戻す）</button></div>';
+    }).join('');
+    sweepStamp();
+  }
+  function askBox(title, lines, yes, onYes) {
+    $('askT').textContent = title; $('askL').innerHTML = lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join(''); $('askY').textContent = yes;
+    $('ask').style.display = 'flex';
+    $('askN').onclick = function () { $('ask').style.display = 'none'; };
+    $('askY').onclick = function () { $('ask').style.display = 'none'; onYes(); };
+  }
+  function stampFind(L, id) { return (L || []).filter(function (x) { return x.id === id; })[0]; }
+  function stampAsk(id) { var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '押した', function () { stampSend(id, false); }); }
+  function stampUndo(id) { var x = stampFind(stampNow.done, id); if (!x) return; askBox('「まだ」に戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
+  async function stampSend(id, undo) {
+    $('stampN').textContent = '送っています…';
+    try {
+      var j = await (await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'staffStamp', k: key, id: id, who: ls('staff_name') || '', undo: !!undo }) })).json();
+      if (j.ok) { drawStamps(j.stamps); try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { c.stamps = j.stamps; ls('staff_home', JSON.stringify(c)); } } catch (e) {} }
+      else { drawStamps(stampNow); alert('送れませんでした。もう一度押してください'); }
+    } catch (e) { drawStamps(stampNow); alert('送れませんでした（電波を確かめて、もう一度）'); }
+  }
+  // 済になった分の通知が iPhone の通知センターに残っていれば消す（まだの分は残す）
+  async function sweepStamp() {
+    try {
+      if (!('serviceWorker' in navigator)) return;
+      var reg = await navigator.serviceWorker.getRegistration(); if (!reg || !reg.getNotifications) return;
+      var keep = (stampNow.todo || []).map(function (x) { return x.lines.join('').replace(/\s+/g, ''); });
+      (await reg.getNotifications()).forEach(function (n) {
+        var b = String(n.body || '').trim(); if (!STAMP.test(b)) return;
+        var k = b.split('\n').slice(1).join('').replace(/\s+/g, '');
+        if (keep.indexOf(k) < 0) n.close();
+      });
+    } catch (e) {}
+  }
   // 11/20 大誠さん：届いた写真（直近3日・日と種類ごと）。誰かがもう送ったか分かるように
   function drawSent(S) {
     // 11/20 大誠さん：肉牛書類（精算書・格付表）は大誠さんの書類なので社員のアプリには出さない
@@ -305,14 +373,14 @@
     if (S.length) $('photoBox').classList.remove('hide');
   }
 
-  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); drawStamps(c.stamps); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
     if (!key) return;
     try {
       var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
       var j = await r.json();
       if (!j.ok) return;
       ls('staff_home', JSON.stringify(j));
-      drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes();
+      drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes(); drawStamps(j.stamps);
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
       var n = new Date(); $('upd').textContent = '最終更新 ' + n.getHours() + ':' + ('0' + n.getMinutes()).slice(-2);
     } catch (e) {}
@@ -330,8 +398,8 @@
     try {
       var d = await openDb();
       var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
-      return dedupNotes(srvNotes.concat(all));
-    } catch (e) { return srvNotes.slice().sort(function (a, b) { return b.at - a.at; }); }
+      return dedupNotes(srvNotes.concat(all)).filter(notStamp);
+    } catch (e) { return srvNotes.filter(notStamp).sort(function (a, b) { return b.at - a.at; }); }
   }
   // 11/23 大誠さん「なんで二つある」：端末に届いた通知（push）とサーバーのお知らせが同じ文なら1つだけ（サーバーの方を残す。前後24時間）
   function dedupNotes(L) {
