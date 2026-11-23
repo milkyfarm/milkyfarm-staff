@@ -141,12 +141,6 @@
     <!-- 11/21 大誠さん：お知らせ（今日の分）は一番上。無いときは出さない。ベルの中の7日分の一覧はそのまま -->
     <div class="card ntop hide" id="ntop" onclick="openList()"><div class="h">🔔 今日のお知らせ<span class="c" id="ntopN"></span></div><div id="ntopL"></div></div>
 
-    <!-- 11/23 大誠さん：台帳の済印。誰かが「済印を押した」を押すまで残る（押すと確認が出る＝2重チェック）。済んだものは下で見返せる・戻せる -->
-    <div class="card hide" id="stampBox" style="border-left:6px solid #E9A54E">
-      <div class="sec"><div class="h">🖊 台帳の済印 まだ<span class="c" id="stampN"></span></div><div id="stampL"></div>
-        <details id="stampD" class="hide" style="margin-top:8px"><summary class="x" style="font-size:13px;cursor:pointer">済んだもの</summary><div id="stampDL"></div></details></div>
-    </div>
-
     <div class="card today" id="cowCard">
       <div class="sec"><div class="h">🐄 分娩予定超過<span class="c" id="lateN"></span><span class="duty hide" id="duty"></span></div><div id="late" class="lst">—</div></div>
       <div class="sep"></div>
@@ -189,7 +183,7 @@
 <div id="ask" style="display:none;position:fixed;inset:0;z-index:40;background:rgba(22,48,63,.45);align-items:center;justify-content:center;padding:20px">
   <div style="background:#fff;border-radius:18px;padding:18px 18px 14px;max-width:420px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.25)">
     <b id="askT" style="font-size:17px"></b><div id="askL" style="margin:10px 0 4px;font-size:15px;line-height:1.7"></div>
-    <div style="display:flex;gap:10px;margin-top:12px"><button id="askN" style="flex:1;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:#e9eef2;color:#16303f">まだ</button><button id="askY" style="flex:1;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:#2f6b3a;color:#fff">押した</button></div>
+    <div style="display:flex;gap:10px;margin-top:12px"><button id="askN" style="flex:1;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:#e9eef2;color:#16303f">やめる</button><button id="askY" style="flex:1;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:#2f6b3a;color:#fff">完了にする</button></div>
   </div>
 </div>
 
@@ -199,7 +193,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-23d';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-23e';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -309,30 +303,14 @@
   }
   var srvNotes = [];   // 社員グループに送った知らせ（GAS staffHome_ の notices）
   // ---- 11/23 台帳の済印（GAS staffStamps_ / staffStamp_）----
-  var STAMP = /^【トレサ届出 済み】/;
+  var STAMP = /^【トレサ届出 済み】/, STAMP_HEAD = '【トレサ届出 済み】台帳に済印をお願いします';
   function notStamp(n) { return !STAMP.test(String(n.body || '').trim()); }
   function cowLine(s) { return esc(s).replace(/(\d{5})(\d{4})(\d)/, '$1<b style="font-size:1.15em">$2</b>$3'); }
   function md(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
   var stampNow = { todo: [], done: [] };
-  function drawStamps(S) {
-    stampNow = S || { todo: [], done: [] };
-    var T = stampNow.todo || [], D = stampNow.done || [];
-    $('stampBox').classList.toggle('hide', !T.length && !D.length);
-    $('stampN').textContent = T.length ? T.length + '件' : '';
-    $('stampBox').style.borderLeftColor = T.length ? '#E9A54E' : '#5FA36B';
-    $('stampL').innerHTML = T.length ? T.map(function (x, i) {
-      return '<div style="padding:8px 0;' + (i ? 'border-top:1px solid var(--line)' : '') + '"><div class="x" style="font-size:12px">' + md(x.at) + ' に届け出</div>' +
-        x.lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join('') +
-        '<button class="go" style="background:#2f6b3a" onclick="stampAsk(\'' + esc(x.id) + '\')">済印を押した</button></div>';
-    }).join('') : '<div class="x">いま押す済印はありません</div>';
-    $('stampD').classList.toggle('hide', !D.length);
-    $('stampDL').innerHTML = D.map(function (x) {
-      return '<div style="padding:8px 0;border-top:1px solid var(--line);font-size:14px"><div class="x" style="font-size:12px">' + esc(x.by) + '　' + md(x.doneAt) + ' に済</div>' +
-        x.lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join('') +
-        '<button onclick="stampUndo(\'' + esc(x.id) + '\')" style="margin-top:6px;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;color:#5d7383">まちがえた（まだに戻す）</button></div>';
-    }).join('');
-    sweepStamp();
-  }
+  // 11/23 18:36 大誠さん「タブを増やすのでなく、お知らせの中で完了を2段階チェックで」→ 専用のカードはやめ、お知らせの一覧の中に「完了」ボタン
+  function stampNotes() { return (stampNow.todo || []).map(function (x) { return { at: x.at, body: STAMP_HEAD + '\n' + x.lines.join('\n'), stamp: x.id, lines: x.lines }; }); }
+  function drawStamps(S) { stampNow = S || { todo: [], done: [] }; drawNotes(); sweepStamp(); }
   function askBox(title, lines, yes, onYes) {
     $('askT').textContent = title; $('askL').innerHTML = lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join(''); $('askY').textContent = yes;
     $('ask').style.display = 'flex';
@@ -340,10 +318,9 @@
     $('askY').onclick = function () { $('ask').style.display = 'none'; onYes(); };
   }
   function stampFind(L, id) { return (L || []).filter(function (x) { return x.id === id; })[0]; }
-  function stampAsk(id) { var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '押した', function () { stampSend(id, false); }); }
-  function stampUndo(id) { var x = stampFind(stampNow.done, id); if (!x) return; askBox('「まだ」に戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
+  function stampAsk(id) { var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '完了にする', function () { stampSend(id, false); }); }
+  function stampUndo(id) { var x = stampFind(stampNow.done, id); if (!x) return; askBox('お知らせに戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
   async function stampSend(id, undo) {
-    $('stampN').textContent = '送っています…';
     try {
       var j = await (await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'staffStamp', k: key, id: id, who: ls('staff_name') || '', undo: !!undo }) })).json();
       if (j.ok) { drawStamps(j.stamps); try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { c.stamps = j.stamps; ls('staff_home', JSON.stringify(c)); } } catch (e) {} }
@@ -398,8 +375,8 @@
     try {
       var d = await openDb();
       var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
-      return dedupNotes(srvNotes.concat(all)).filter(notStamp);
-    } catch (e) { return srvNotes.filter(notStamp).sort(function (a, b) { return b.at - a.at; }); }
+      return dedupNotes(srvNotes.concat(all)).filter(notStamp).concat(stampNotes()).sort(function (a, b) { return b.at - a.at; });
+    } catch (e) { return srvNotes.filter(notStamp).concat(stampNotes()).sort(function (a, b) { return b.at - a.at; }); }
   }
   // 11/23 大誠さん「なんで二つある」：端末に届いた通知（push）とサーバーのお知らせが同じ文なら1つだけ（サーバーの方を残す。前後24時間）
   function dedupNotes(L) {
@@ -414,20 +391,33 @@
     $('unread').textContent = un > 99 ? '99+' : un; $('unread').classList.toggle('hide', !un);
     // 11/21 大誠さん：今日のお知らせは一番上のカードに（無いときは出さない）
     var t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    var td = all.filter(function (n) { return n.at >= t0.getTime(); });
+    var td = all.filter(function (n) { return n.at >= t0.getTime() || n.stamp; });   // 済印の知らせは完了するまで出す
     $('ntop').classList.toggle('hide', !td.length);
     $('ntopN').textContent = td.length ? td.length + '件' : '';
-    $('ntopL').innerHTML = td.slice(0, 3).map(function (n) { var d = new Date(n.at); return '<div class="it"><span class="t">' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + '</span>' + esc(String(n.body).split('\n')[0]) + '</div>'; }).join('') + (td.length > 3 ? '<div class="it x">ほか' + (td.length - 3) + '件（押すと全部）</div>' : '');
-    if (!all.length) { $('list').textContent = 'まだありません'; return; }
-    $('list').innerHTML = '';
+    $('ntopL').innerHTML = td.slice(0, 3).map(function (n) { var d = new Date(n.at); return '<div class="it"><span class="t">' + (n.at >= t0.getTime() ? d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') : (d.getMonth() + 1) + '/' + d.getDate()) + '</span>' + esc(String(n.body).split('\n')[0]) + '</div>'; }).join('') + (td.length > 3 ? '<div class="it x">ほか' + (td.length - 3) + '件（押すと全部）</div>' : '');
+    $('list').innerHTML = all.length ? '' : 'まだありません';
     all.slice(0, 100).forEach(function (n) {
       var div = document.createElement('div'); div.className = 'item' + (n.at > seen ? ' new' : '');
       div.innerHTML = '<div class="t"></div><div class="b"></div>';
       div.querySelector('.t').textContent = when(n.at) + (n.title && n.title !== 'ミルキーファーム' ? '　' + n.title : '');
       div.querySelector('.b').textContent = n.body;
       if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
+      if (n.stamp) {   // 作業が要る知らせ（台帳の済印）だけ「完了」。押すと確認が出る（2段階）
+        div.querySelector('.b').innerHTML = esc(STAMP_HEAD) + n.lines.map(function (s) { return '<br>' + cowLine(s); }).join('');
+        var b = document.createElement('button'); b.textContent = '完了'; b.style.cssText = 'margin-top:8px;font-size:15px;font-weight:700;border:0;border-radius:12px;padding:8px 22px;background:#2f6b3a;color:#fff';
+        b.onclick = function (e) { e.stopPropagation(); stampAsk(n.stamp); }; div.appendChild(b);
+      }
       $('list').appendChild(div);
     });
+    var D = stampNow.done || [];
+    if (D.length) {
+      var dt = document.createElement('details'); dt.style.cssText = 'margin-top:14px;font-size:13px;color:#5d7383';
+      dt.innerHTML = '<summary style="cursor:pointer">完了にしたもの（' + D.length + '）</summary>' + D.map(function (x) {
+        return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-size:12px">' + esc(x.by) + '　' + md(x.doneAt) + ' に完了</div>' + x.lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join('') +
+          '<button onclick="stampUndo(\'' + esc(x.id) + '\')" style="margin-top:4px;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;color:#5d7383">戻す</button></div>';
+      }).join('');
+      $('list').appendChild(dt);
+    }
   }
   function openList() { $('sheet').classList.add('on'); drawNotes().then(function () { ls('staff_seen', String(Date.now())); $('unread').classList.add('hide'); }); }
   function closeList() { $('sheet').classList.remove('on'); drawNotes(); }
