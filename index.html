@@ -328,8 +328,14 @@
     try {
       var d = await openDb();
       var all = await new Promise(function (ok) { var q = d.transaction('notes').objectStore('notes').getAll(); q.onsuccess = function () { ok(q.result || []); }; q.onerror = function () { ok([]); }; });
-      return all.concat(srvNotes).sort(function (a, b) { return b.at - a.at; });
+      return dedupNotes(srvNotes.concat(all));
     } catch (e) { return srvNotes.slice().sort(function (a, b) { return b.at - a.at; }); }
+  }
+  // 11/23 大誠さん「なんで二つある」：端末に届いた通知（push）とサーバーのお知らせが同じ文なら1つだけ（サーバーの方を残す。前後24時間）
+  function dedupNotes(L) {
+    var key = function (n) { return String(n.body || '').replace(/\s+/g, '').slice(0, 80); }, out = [];
+    L.forEach(function (n) { if (!out.some(function (m) { return key(m) === key(n) && Math.abs(m.at - n.at) < 864e5; })) out.push(n); });
+    return out.sort(function (a, b) { return b.at - a.at; });
   }
   function when(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
   async function drawNotes() {
