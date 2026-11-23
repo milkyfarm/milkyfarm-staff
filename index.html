@@ -186,7 +186,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-23a';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-23b';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -429,8 +429,28 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); verCheck(); } });
   // 2026-11-23 大誠さん「開いたらちゃんと更新されるように」：戻る（bfcache）でも読み直す・上で下に引っぱっても読み直す
   window.addEventListener('pageshow', function (e) { if (e.persisted) { drawNotes(); if (key) loadHome(); verCheck(); } });
-  (function () { var y0 = null; document.addEventListener('touchstart', function (e) { y0 = (window.scrollY || document.documentElement.scrollTop) <= 0 ? e.touches[0].clientY : null; }, { passive: true });
-    document.addEventListener('touchend', function (e) { if (y0 === null) return; var d = e.changedTouches[0].clientY - y0; y0 = null; if (d > 140) { $('upd').textContent = '読み込み中…'; drawNotes(); if (key) loadHome(); } }, { passive: true }); })();
+  // 2026-11-23 大誠さん「引っぱって更新の動きが気持ち悪い」→ iPhone のメール・LINE と同じ動き（画面がゴムのように下がる・くるくるが少しずつ出る・離すと読み直し・スッと戻る）
+  function ptr(sel,run,top,skip){var el=document.querySelector(sel);if(!el)return;
+  var ind=document.createElement('div');ind.id='ptr';ind.innerHTML='<i></i>';document.body.appendChild(ind);var ring=ind.firstChild;
+  var st=document.createElement('style');st.textContent='#ptr{position:fixed;left:50%;top:'+top+';width:34px;height:34px;margin-left:-17px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(27,58,76,.22);z-index:30;opacity:0;transform:translate3d(0,-48px,0);pointer-events:none;will-change:transform,opacity}#ptr i{position:absolute;left:8px;top:8px;width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:2.5px solid #4c88aa;border-top-color:transparent}#ptr.spin i{animation:ptrs .7s linear infinite}@keyframes ptrs{to{transform:rotate(360deg)}}.ptr-el{will-change:transform}.ptr-back{transition:transform .35s cubic-bezier(.2,.9,.3,1),opacity .35s}';
+  document.head.appendChild(st);el.classList.add('ptr-el');
+  var y0=null,x0=0,d=0,busy=false,TH=62,MAX=120,HOLD=54,raf=0;
+  function atTop(){return (window.scrollY||document.documentElement.scrollTop||document.body.scrollTop||0)<=0}
+  function set(v,anim){d=v;el.classList.toggle('ptr-back',!!anim);ind.classList.toggle('ptr-back',!!anim);
+    el.style.transform=v>0?'translate3d(0,'+v+'px,0)':'';var p=Math.min(1,v/TH);
+    ind.style.opacity=v>0?String(p):'0';ind.style.transform='translate3d(0,'+(Math.min(v,TH+20)*0.85-48)+'px,0)';
+    if(!ind.classList.contains('spin'))ring.style.transform='rotate('+(p*300)+'deg)'}
+  function rubber(dy){return MAX*(1-Math.exp(-dy/(MAX*1.7)))}
+  document.addEventListener('touchstart',function(e){if(busy||e.touches.length>1||!atTop()||(skip&&skip())||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)){y0=null;return}y0=e.touches[0].clientY;x0=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchmove',function(e){if(y0===null)return;var dy=e.touches[0].clientY-y0,dx=Math.abs(e.touches[0].clientX-x0);
+    if(dy<=0||(d===0&&dx>dy)){if(d>0)set(0,false);if(dy<0||dx>dy)y0=null;return}
+    if(!atTop()){y0=null;return}
+    e.preventDefault();var v=rubber(dy);cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){set(v,false)})},{passive:false});
+  function end(){if(y0===null)return;y0=null;cancelAnimationFrame(raf);
+    if(d>=TH&&!busy){busy=true;ind.classList.add('spin');ring.style.transform='';set(HOLD,true);var fin=false,done=function(){if(fin)return;fin=true;setTimeout(function(){set(0,true);setTimeout(function(){ind.classList.remove('spin');busy=false},350)},250)};setTimeout(done,15000);try{run(done)}catch(err){done()}}
+    else set(0,true)}
+  document.addEventListener('touchend',end,{passive:true});document.addEventListener('touchcancel',end,{passive:true})}
+  ptr('.wrap', function (done) { drawNotes(); if (key) loadHome().then(done, done); else done(); }, 'calc(max(env(safe-area-inset-top, 0px), var(--sat, 0px)) + 8px)', function () { return Array.prototype.some.call(document.querySelectorAll('.sheet'), function (x) { return getComputedStyle(x).display !== 'none'; }); });
 </script>
 </body>
 </html>
