@@ -189,7 +189,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-23g';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-24a';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -355,18 +355,42 @@
     } catch (e) {}
   }
 
-  async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); drawStamps(c.stamps); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
-    if (!key) return;
-    try {
-      var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key));
-      var j = await r.json();
-      if (!j.ok) return;
-      ls('staff_home', JSON.stringify(j));
-      drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes(); drawStamps(j.stamps);
-      if (j.buttons && j.buttons.length) drawApps(j.buttons);
-      var n = new Date(); $('upd').textContent = '最終更新 ' + n.getHours() + ':' + ('0' + n.getMinutes()).slice(-2);
-    } catch (e) {}
+  // 2026-11-24 大誠さん「入口アプリは開くたびに更新されない」：戻った直後は iPhone の通信がまだ起きておらず取り直しが失敗し、
+  // 失敗しても黙って古い表示のままだった → 失敗したら間をおいて取り直す（3回まで）・キャッシュを使わない・取り直し中は「更新中…」
+  var lastLoad = 0, loading = null;
+  function hm(n) { return n.getHours() + ':' + ('0' + n.getMinutes()).slice(-2); }
+  async function loadHome(noCache) {
+    if (!noCache) try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); drawStamps(c.stamps); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
+    if (!key) return false;
+    var u = $('upd'), was = u.textContent.replace(/（.*$/, '');
+    u.textContent = (was ? was + '（' : '（') + '更新中…）';
+    for (var i = 0; i < 3; i++) {
+      if (i) await new Promise(function (ok) { setTimeout(ok, i === 1 ? 1500 : 4000); });
+      try {
+        var ac = 'AbortController' in window ? new AbortController() : null, tm = ac ? setTimeout(function () { ac.abort(); }, 20000) : 0;
+        var r = await fetch(EXEC + '?api=staffHome&k=' + encodeURIComponent(key) + '&t=' + Date.now(), { cache: 'no-store', signal: ac ? ac.signal : undefined });
+        clearTimeout(tm);
+        var j = await r.json();
+        if (!j.ok) break;
+        ls('staff_home', JSON.stringify(j));
+        drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes(); drawStamps(j.stamps);
+        if (j.buttons && j.buttons.length) drawApps(j.buttons);
+        lastLoad = Date.now(); u.textContent = '最終更新 ' + hm(new Date());
+        return true;
+      } catch (e) {}
+    }
+    u.textContent = (was || '') + '（読み直せず・下に引っぱって再読込）';
+    return false;
   }
+  // 開いた・戻った・通知から来た：前回から20秒以内なら飛ばす（引っぱったときは必ず読む）。同時に2つは走らせない
+  function refresh(force) {
+    if (!key) return Promise.resolve(false);
+    if (loading) return loading;
+    if (!force && Date.now() - lastLoad < 20000) return Promise.resolve(true);
+    loading = loadHome(true).then(function (v) { loading = null; return v; }, function () { loading = null; return false; });
+    return loading;
+  }
+  function onBack() { if (document.hidden) return; $('date').textContent = today(); drawNotes(); refresh(false); verCheck(); }
 
   // ---- お知らせ（service worker が端末の中に残したもの） ----
   function openDb() {
@@ -472,7 +496,7 @@
   drawNotes();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
-    navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') drawNotes(); if (e.data && e.data.type === 'open') { drawNotes(); if (key) loadHome(); verCheck(); } });
+    navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') drawNotes(); if (e.data && e.data.type === 'open') { drawNotes(); refresh(true); verCheck(); } });
   }
   if (standalone) $('foot').textContent = '(有)ミルキーファーム';
   $('foot').innerHTML += '<div class="ver">版 ' + VER + '</div>';
@@ -487,16 +511,20 @@
   verCheck();
   if (!key) { $('nokey').classList.remove('hide'); }
   else {
-    loadHome();
+    loading = loadHome(false).then(function (v) { loading = null; return v; }, function () { loading = null; return false; });   // 初回は端末に残した前回分をまず出してから取り直す
     if (canPush && (!isIOS || standalone) && !(ls('staff_reg') && Notification.permission === 'granted')) {
       $('name').classList.add('hide');
       if (Notification.permission === 'granted') allow();   // もう許可してある端末は黙って登録
       else { $('setup').classList.remove('hide'); setState('「通知を許可する」を押すと、牧場からのお知らせが届きます。'); }
     }
   }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); verCheck(); } });
+  document.addEventListener('visibilitychange', onBack);
+  window.addEventListener('focus', onBack);
+  window.addEventListener('online', function () { refresh(true); });
+  // 開いたまま置いてあっても5分ごとに取り直す（見えているときだけ）
+  setInterval(function () { if (!document.hidden && Date.now() - lastLoad > 5 * 60000) refresh(false); }, 60000);
   // 2026-11-23 大誠さん「開いたらちゃんと更新されるように」：戻る（bfcache）でも読み直す・上で下に引っぱっても読み直す
-  window.addEventListener('pageshow', function (e) { if (e.persisted) { drawNotes(); if (key) loadHome(); verCheck(); } });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) onBack(); });
   // 2026-11-23 大誠さん「引っぱって更新の動きが気持ち悪い」→ iPhone のメール・LINE と同じ動き（画面がゴムのように下がる・くるくるが少しずつ出る・離すと読み直し・スッと戻る）
   function ptr(sel,run,top,skip){var el=document.querySelector(sel);if(!el)return;
   var ind=document.createElement('div');ind.id='ptr';ind.innerHTML='<i></i>';document.body.appendChild(ind);var ring=ind.firstChild;
@@ -518,7 +546,7 @@
     if(d>=TH&&!busy){busy=true;ind.classList.add('spin');ring.style.transform='';set(HOLD,true);var fin=false,done=function(){if(fin)return;fin=true;setTimeout(function(){set(0,true);setTimeout(function(){ind.classList.remove('spin');busy=false},350)},250)};setTimeout(done,15000);try{run(done)}catch(err){done()}}
     else set(0,true)}
   document.addEventListener('touchend',end,{passive:true});document.addEventListener('touchcancel',end,{passive:true})}
-  ptr('.wrap', function (done) { drawNotes(); if (key) loadHome().then(done, done); else done(); }, 'calc(max(env(safe-area-inset-top, 0px), var(--sat, 0px)) + 8px)', function () { return Array.prototype.some.call(document.querySelectorAll('.sheet'), function (x) { return getComputedStyle(x).display !== 'none'; }); });
+  ptr('.wrap', function (done) { drawNotes(); refresh(true).then(done, done); }, 'calc(max(env(safe-area-inset-top, 0px), var(--sat, 0px)) + 8px)', function () { return Array.prototype.some.call(document.querySelectorAll('.sheet'), function (x) { return getComputedStyle(x).display !== 'none'; }); });
 </script>
 </body>
 </html>
