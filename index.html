@@ -160,10 +160,6 @@
     </div>
 
 
-    <div class="card hide" id="photoBox">
-        <div class="sec"><div class="h">📷 写真のお願い</div><div id="photo" class="lst"></div><div id="sent" class="lst" style="margin-top:6px"></div>
-          <div class="x" style="margin-top:6px;font-size:13px">見開き・前のページが写っていてもOK　<a href="https://milkyfarm.github.io/milkyfarm-note/" style="color:var(--main)">写真取込アプリで送る</a></div></div>
-    </div>
 
     <!-- 11/21e 大誠さん：アプリの一覧は写真のお願いとは別のカード -->
     <div class="card appsCard"><div class="h2in">アプリ</div><div class="apps" id="apps"></div></div>
@@ -193,7 +189,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-23e';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-23f';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -292,10 +288,7 @@
     $('vac').innerHTML += '<div class="vnote">※この一覧には、体調不良で延期した牛・子牛は載っていません。延期した牛がいないか確認してください</div>';
     // 写真のお願い（11/20。朝の連絡に載せていたもの。GAS cowMorningSend の parts.photo）
     // 11/21 大誠さん：届いて読み取られたお願いは消える（GAS staffPhotoLive_）。全部消えたらカードごと出さない
-    var P = c.photo || [];
-    $('photoBox').classList.toggle('hide', !P.length);
-    $('photo').innerHTML = P.map(function (x) { return '<div>' + esc(String(x).replace(/^・/, '')) + '</div>'; }).join('');
-    $('sent').innerHTML = P.length && c.photoNote ? '<div class="x">' + esc(c.photoNote) + '</div>' : '';
+    // 11/23 大誠さん「写真のお願いもお知らせの中に」→ カードはやめた（お知らせの一覧の1件。stampNotes）
     // 11/21 分娩予定（今日から7日以内・まだ分娩していない。予定日を過ぎた牛は分娩予定超過）
     var S = c.soon || [];
     $('soonN').textContent = S.length ? S.length + '頭' : '';
@@ -309,17 +302,27 @@
   function md(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
   var stampNow = { todo: [], done: [] };
   // 11/23 18:36 大誠さん「タブを増やすのでなく、お知らせの中で完了を2段階チェックで」→ 専用のカードはやめ、お知らせの一覧の中に「完了」ボタン
-  function stampNotes() { return (stampNow.todo || []).map(function (x) { return { at: x.at, body: STAMP_HEAD + '\n' + x.lines.join('\n'), stamp: x.id, lines: x.lines }; }); }
+  var PHOTO_HEAD = '📷 写真のお願い', PHOTO_URL = 'https://milkyfarm.github.io/milkyfarm-note/';
+  function stampNotes() {
+    var L = (stampNow.todo || []).map(function (x) { return { at: x.at, body: STAMP_HEAD + '\n' + x.lines.join('\n'), stamp: x.id, lines: x.lines }; });
+    var P = stampNow.photo;   // 写真のお願い（届いて読み取れた項目はサーバーが外す。全部済んだら null）
+    if (P && P.lines && P.lines.length) L.push({ at: P.at, body: PHOTO_HEAD + '\n' + P.lines.join('\n'), stamp: 'photo', photo: true, lines: P.lines.map(function (s) { return String(s).replace(/^・/, ''); }), note: P.note || '' });
+    return L;
+  }
   function drawStamps(S) { stampNow = S || { todo: [], done: [] }; drawNotes(); sweepStamp(); }
-  function askBox(title, lines, yes, onYes) {
-    $('askT').textContent = title; $('askL').innerHTML = lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join(''); $('askY').textContent = yes;
+  function askBox(title, lines, yes, onYes, plain) {
+    $('askT').textContent = title; $('askL').innerHTML = lines.map(function (s) { return '<div>' + (plain ? esc(s) : cowLine(s)) + '</div>'; }).join(''); $('askY').textContent = yes;
     $('ask').style.display = 'flex';
     $('askN').onclick = function () { $('ask').style.display = 'none'; };
     $('askY').onclick = function () { $('ask').style.display = 'none'; onYes(); };
   }
   function stampFind(L, id) { return (L || []).filter(function (x) { return x.id === id; })[0]; }
-  function stampAsk(id) { var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '完了にする', function () { stampSend(id, false); }); }
-  function stampUndo(id) { var x = stampFind(stampNow.done, id); if (!x) return; askBox('お知らせに戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
+  function stampAsk(id) {
+    if (id === 'photo') { var P = stampNow.photo; if (!P) return; askBox('写真を送らずに完了にしますか？', P.lines.map(function (s) { return String(s).replace(/^・/, ''); }), '完了にする', function () { stampSend('photo', false); }, true); return; }
+    var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '完了にする', function () { stampSend(id, false); }); }
+  function stampUndo(id) {
+    if (id === 'photo') { var Q = stampNow.photoDone; if (!Q) return; askBox('お知らせに戻しますか？', Q.lines.map(function (s) { return String(s).replace(/^・/, ''); }), '戻す', function () { stampSend('photo', true); }, true); return; }
+    var x = stampFind(stampNow.done, id); if (!x) return; askBox('お知らせに戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
   async function stampSend(id, undo) {
     try {
       var j = await (await fetch(EXEC, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: 'staffStamp', k: key, id: id, who: ls('staff_name') || '', undo: !!undo }) })).json();
@@ -339,15 +342,6 @@
         if (keep.indexOf(k) < 0) n.close();
       });
     } catch (e) {}
-  }
-  // 11/20 大誠さん：届いた写真（直近3日・日と種類ごと）。誰かがもう送ったか分かるように
-  function drawSent(S) {
-    // 11/20 大誠さん：肉牛書類（精算書・格付表）は大誠さんの書類なので社員のアプリには出さない
-    S = (S || []).filter(function (s) { return !/肉牛|精算|格付/.test(String(s.kind)); });
-    $('sent').innerHTML = S.length ? '<div class="g">届いた写真</div>' + S.map(function (s) {
-      return '<div class="r"><span class="no" style="min-width:5.5em">' + esc(s.day + ' ' + (s.time || '')) + '</span><span>' + esc(s.kind) + ' ' + esc(s.n) + '枚</span><span class="x">' + (s.wait ? '読み取り中' : '読み取り済み') + '</span></div>';
-    }).join('') : '';
-    if (S.length) $('photoBox').classList.remove('hide');
   }
 
   async function loadHome() {    try { var c = JSON.parse(ls('staff_home') || 'null'); if (c) { drawHome(c.data); drawCow(c.cow); srvNotes = c.notices || []; drawNotes(); drawStamps(c.stamps); if (c.buttons && c.buttons.length) drawApps(c.buttons); } } catch (e) {}
@@ -403,17 +397,21 @@
       div.querySelector('.b').textContent = n.body;
       if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
       if (n.stamp) {   // 作業が要る知らせ（台帳の済印）だけ「完了」。押すと確認が出る（2段階）
-        div.querySelector('.b').innerHTML = esc(STAMP_HEAD) + n.lines.map(function (s) { return '<br>' + cowLine(s); }).join('');
+        div.querySelector('.b').innerHTML = n.photo
+          ? '<b>' + esc(PHOTO_HEAD) + '</b>' + n.lines.map(function (s) { return '<br>' + esc(s); }).join('') + (n.note ? '<br><span class="x" style="font-size:13px">' + esc(n.note) + '</span>' : '') +
+            '<br><span class="x" style="font-size:13px">見開き・前のページが写っていてもOK　</span><a href="' + PHOTO_URL + '" style="color:var(--main);font-size:13px">写真取込アプリで送る</a>'
+          : esc(STAMP_HEAD) + n.lines.map(function (s) { return '<br>' + cowLine(s); }).join('');
         var b = document.createElement('button'); b.textContent = '完了'; b.style.cssText = 'margin-top:8px;font-size:15px;font-weight:700;border:0;border-radius:12px;padding:8px 22px;background:#2f6b3a;color:#fff';
         b.onclick = function (e) { e.stopPropagation(); stampAsk(n.stamp); }; div.appendChild(b);
       }
       $('list').appendChild(div);
     });
-    var D = stampNow.done || [];
+    var D = (stampNow.done || []).slice();
+    if (stampNow.photoDone) D.unshift({ id: 'photo', photo: true, by: stampNow.photoDone.by, doneAt: stampNow.photoDone.doneAt, lines: stampNow.photoDone.lines.map(function (s) { return '写真：' + String(s).replace(/^・/, ''); }) });
     if (D.length) {
       var dt = document.createElement('details'); dt.style.cssText = 'margin-top:14px;font-size:13px;color:#5d7383';
       dt.innerHTML = '<summary style="cursor:pointer">完了にしたもの（' + D.length + '）</summary>' + D.map(function (x) {
-        return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-size:12px">' + esc(x.by) + '　' + md(x.doneAt) + ' に完了</div>' + x.lines.map(function (s) { return '<div>' + cowLine(s) + '</div>'; }).join('') +
+        return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-size:12px">' + esc(x.by) + '　' + md(x.doneAt) + ' に完了</div>' + x.lines.map(function (s) { return '<div>' + (x.photo ? esc(s) : cowLine(s)) + '</div>'; }).join('') +
           '<button onclick="stampUndo(\'' + esc(x.id) + '\')" style="margin-top:4px;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;color:#5d7383">戻す</button></div>';
       }).join('');
       $('list').appendChild(dt);
