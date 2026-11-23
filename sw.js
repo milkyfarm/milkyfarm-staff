@@ -36,7 +36,9 @@ self.addEventListener('notificationclick', (e) => {
   const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
   e.waitUntil((async () => {
     const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const c of cs) { if (c.url === url && 'focus' in c) return c.focus(); }
+    // 2026-11-23 開いている画面は ?k= 付きで url と一致せず、iPhone では前の画面のまま出ていた → どの画面にも「読み直して」と伝えて前に出す
+    const here = new URL(url).pathname;
+    for (const c of cs) { if ('focus' in c && new URL(c.url).pathname === here) { c.postMessage({ type: 'open', url }); return c.focus(); } }
     return self.clients.openWindow(url);
   })());
 });

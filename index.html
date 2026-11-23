@@ -127,6 +127,7 @@
       </button>
     </div>
     <div class="date" id="date"></div>
+    <div id="upd" style="font-size:11px;opacity:.75;text-align:right"></div>
   </div>
 
   <main>
@@ -185,7 +186,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-21i';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-23a';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -313,6 +314,7 @@
       ls('staff_home', JSON.stringify(j));
       drawHome(j.data); drawCow(j.cow); srvNotes = j.notices || []; drawNotes();
       if (j.buttons && j.buttons.length) drawApps(j.buttons);
+      var n = new Date(); $('upd').textContent = '最終更新 ' + n.getHours() + ':' + ('0' + n.getMinutes()).slice(-2);
     } catch (e) {}
   }
 
@@ -402,7 +404,7 @@
   drawNotes();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
-    navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') drawNotes(); });
+    navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.type === 'new') drawNotes(); if (e.data && e.data.type === 'open') { drawNotes(); if (key) loadHome(); verCheck(); } });
   }
   if (standalone) $('foot').textContent = '(有)ミルキーファーム';
   $('foot').innerHTML += '<div class="ver">版 ' + VER + '</div>';
@@ -425,6 +427,10 @@
     }
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { $('date').textContent = today(); drawNotes(); if (key) loadHome(); verCheck(); } });
+  // 2026-11-23 大誠さん「開いたらちゃんと更新されるように」：戻る（bfcache）でも読み直す・上で下に引っぱっても読み直す
+  window.addEventListener('pageshow', function (e) { if (e.persisted) { drawNotes(); if (key) loadHome(); verCheck(); } });
+  (function () { var y0 = null; document.addEventListener('touchstart', function (e) { y0 = (window.scrollY || document.documentElement.scrollTop) <= 0 ? e.touches[0].clientY : null; }, { passive: true });
+    document.addEventListener('touchend', function (e) { if (y0 === null) return; var d = e.changedTouches[0].clientY - y0; y0 = null; if (d > 140) { $('upd').textContent = '読み込み中…'; drawNotes(); if (key) loadHome(); } }, { passive: true }); })();
 </script>
 </body>
 </html>
