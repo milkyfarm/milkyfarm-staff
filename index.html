@@ -189,7 +189,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-24a';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-25a';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -299,7 +299,7 @@
   var STAMP = /^【トレサ届出 済み】/, STAMP_HEAD = '【トレサ届出 済み】台帳に済印をお願いします';
   // 11/23 大誠さん「写真のお願いが2件・試しが消えない」：お知らせは サーバー（入口のお知らせ）と 端末に届いたプッシュの記録 の2つから作っている。
   // 済印・写真のお願いは専用の1件（stampNotes）で出すので、プッシュの記録・シートの行の方は出さない。【試し】も出さない
-  var JUNK = /^(📷\s*(ノート)?写真のお願い|【試し】)/;
+  var JUNK = /^(📷\s*(ノート)?写真のお願い|【試し】|【空胎維持の設定】)/;   // 11/25 空胎維持も専用の1件（keep）で出す
   function notStamp(n) { var b = String(n.body || '').trim(); return !STAMP.test(b) && !JUNK.test(b); }
   // 端末の記録の掃除：出さないもの（済印・写真のお願い・試し）と、8日より前のもの（サーバーは7日分）を消す
   async function purgeNotes() {
@@ -314,10 +314,14 @@
   var stampNow = { todo: [], done: [] };
   // 11/23 18:36 大誠さん「タブを増やすのでなく、お知らせの中で完了を2段階チェックで」→ 専用のカードはやめ、お知らせの一覧の中に「完了」ボタン
   var PHOTO_HEAD = '📷 写真のお願い', PHOTO_URL = 'https://milkyfarm.github.io/milkyfarm-note/';
+  // 11/25 大誠さん「これやるまで消えないんだよね？」：空胎維持の設定は済むまで残す（Horizon で空胎維持になった牛は朝に自動で外れる）・完了は2段階
+  var KEEP_HEAD = '【空胎維持の設定】繁殖中止の牛です', KEEP_RE = /^【空胎維持の設定】/;
   function stampNotes() {
     var L = (stampNow.todo || []).map(function (x) { return { at: x.at, body: STAMP_HEAD + '\n' + x.lines.join('\n'), stamp: x.id, lines: x.lines }; });
     var P = stampNow.photo;   // 写真のお願い（届いて読み取れた項目はサーバーが外す。全部済んだら null）
     if (P && P.lines && P.lines.length) L.push({ at: P.at, body: PHOTO_HEAD + '\n' + P.lines.join('\n'), stamp: 'photo', photo: true, lines: P.lines.map(function (s) { return String(s).replace(/^・/, ''); }), note: P.note || '' });
+    var K = stampNow.keep;   // 空胎維持の設定（まだの牛）
+    if (K && K.lines && K.lines.length) L.push({ at: K.at, body: KEEP_HEAD + '\n' + K.lines.join('\n'), stamp: 'keep', keep: true, lines: K.lines });
     return L;
   }
   function drawStamps(S) { stampNow = S || { todo: [], done: [] }; drawNotes(); sweepStamp(); }
@@ -329,9 +333,11 @@
   }
   function stampFind(L, id) { return (L || []).filter(function (x) { return x.id === id; })[0]; }
   function stampAsk(id) {
+    if (id === 'keep') { var K = stampNow.keep; if (!K) return; askBox('この牛を Horizon で空胎維持にして、繁殖台帳に「中止」と書きましたか？', K.lines, '完了にする', function () { stampSend('keep', false); }, true); return; }
     if (id === 'photo') { var P = stampNow.photo; if (!P) return; askBox('写真を送らずに完了にしますか？', P.lines.map(function (s) { return String(s).replace(/^・/, ''); }), '完了にする', function () { stampSend('photo', false); }, true); return; }
     var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '完了にする', function () { stampSend(id, false); }); }
   function stampUndo(id) {
+    if (id === 'keep') { var KD = stampNow.keepDone; if (!KD) return; askBox('お知らせに戻しますか？', KD.lines, '戻す', function () { stampSend('keep', true); }, true); return; }
     if (id === 'photo') { var Q = stampNow.photoDone; if (!Q) return; askBox('お知らせに戻しますか？', Q.lines.map(function (s) { return String(s).replace(/^・/, ''); }), '戻す', function () { stampSend('photo', true); }, true); return; }
     var x = stampFind(stampNow.done, id); if (!x) return; askBox('お知らせに戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
   async function stampSend(id, undo) {
@@ -348,7 +354,9 @@
       var reg = await navigator.serviceWorker.getRegistration(); if (!reg || !reg.getNotifications) return;
       var keep = (stampNow.todo || []).map(function (x) { return x.lines.join('').replace(/\s+/g, ''); });
       (await reg.getNotifications()).forEach(function (n) {
-        var b = String(n.body || '').trim(); if (!STAMP.test(b)) return;
+        var b = String(n.body || '').trim();
+        if (KEEP_RE.test(b)) { if (!stampNow.keep) n.close(); return; }   // 空胎維持：まだの牛がいなければ通知も消す
+        if (!STAMP.test(b)) return;
         var k = b.split('\n').slice(1).join('').replace(/\s+/g, '');
         if (keep.indexOf(k) < 0) n.close();
       });
@@ -432,7 +440,9 @@
       div.querySelector('.b').textContent = n.body;
       if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
       if (n.stamp) {   // 作業が要る知らせ（台帳の済印）だけ「完了」。押すと確認が出る（2段階）
-        div.querySelector('.b').innerHTML = n.photo
+        div.querySelector('.b').innerHTML = n.keep
+          ? '<b>' + esc(KEEP_HEAD) + '</b><br>①Horizonで空胎維持にする<br>②繁殖台帳に「中止」と書く' + n.lines.map(function (s) { return '<br><b>' + esc(s) + '</b>'; }).join('') + '<br><span class="x" style="font-size:13px">Horizon で空胎維持になった牛は、次の朝に自動で消えます</span>'
+          : n.photo
           ? '<b>' + esc(PHOTO_HEAD) + '</b>' + n.lines.map(function (s) { return '<br>' + esc(s); }).join('') + (n.note ? '<br><span class="x" style="font-size:13px">' + esc(n.note) + '</span>' : '') +
             '<br><span class="x" style="font-size:13px">見開き・前のページが写っていてもOK　</span><a href="' + PHOTO_URL + '" style="color:var(--main);font-size:13px">写真取込アプリで送る</a>'
           : esc(STAMP_HEAD) + n.lines.map(function (s) { return '<br>' + cowLine(s); }).join('');
@@ -442,6 +452,7 @@
       $('list').appendChild(div);
     });
     var D = (stampNow.done || []).slice();
+    if (stampNow.keepDone) D.unshift({ id: 'keep', photo: true, by: stampNow.keepDone.by, doneAt: stampNow.keepDone.doneAt, lines: stampNow.keepDone.lines.map(function (s) { return '空胎維持：' + s; }) });
     if (stampNow.photoDone) D.unshift({ id: 'photo', photo: true, by: stampNow.photoDone.by, doneAt: stampNow.photoDone.doneAt, lines: stampNow.photoDone.lines.map(function (s) { return '写真：' + String(s).replace(/^・/, ''); }) });
     if (D.length) {
       var dt = document.createElement('details'); dt.style.cssText = 'margin-top:14px;font-size:13px;color:#5d7383';
