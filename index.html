@@ -189,7 +189,7 @@
 </div>
 
 <script>
-  var VER = '2026-11-25a';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
+  var VER = '2026-11-25b';   // 11/21 版番号（画面の下に出す。新しい版が出たら自動で読み直す）
   var EXEC = 'https://script.google.com/macros/s/AKfycbweBFqQ_3hq_fmIR12lAtrToWwCSDW2U5SU87Ng6k-H3Xjf1cQrMA93jEJDOObam79j4A/exec';
   var VAPID = 'BF95IondUGeHdtRooS430nvgnnp-59ZUumsC_bg0faFk_p8CDBtLa-19zha3Jn085QqsshbjgHtwPJLEokv57wU';   // 公開鍵（置いてよい）
   // ボタンの最初の形（シート「入口のボタン」が読めたらそちらを使う）
@@ -300,7 +300,7 @@
   // 11/23 大誠さん「写真のお願いが2件・試しが消えない」：お知らせは サーバー（入口のお知らせ）と 端末に届いたプッシュの記録 の2つから作っている。
   // 済印・写真のお願いは専用の1件（stampNotes）で出すので、プッシュの記録・シートの行の方は出さない。【試し】も出さない
   var JUNK = /^(📷\s*(ノート)?写真のお願い|【試し】|【空胎維持の設定】)/;   // 11/25 空胎維持も専用の1件（keep）で出す
-  function notStamp(n) { var b = String(n.body || '').trim(); return !STAMP.test(b) && !JUNK.test(b); }
+  function notStamp(n) { var b = String(n.body || '').trim(); return !STAMP.test(b) && !JUNK.test(b) && !((stampNow && stampNow.taskHeads) || []).some(function (h) { return b.indexOf(h) === 0; }); }   // 11/25 やることの知らせ（tasks）も専用の1件で出す
   // 端末の記録の掃除：出さないもの（済印・写真のお願い・試し）と、8日より前のもの（サーバーは7日分）を消す
   async function purgeNotes() {
     try {
@@ -322,6 +322,7 @@
     if (P && P.lines && P.lines.length) L.push({ at: P.at, body: PHOTO_HEAD + '\n' + P.lines.join('\n'), stamp: 'photo', photo: true, lines: P.lines.map(function (s) { return String(s).replace(/^・/, ''); }), note: P.note || '' });
     var K = stampNow.keep;   // 空胎維持の設定（まだの牛）
     if (K && K.lines && K.lines.length) L.push({ at: K.at, body: KEEP_HEAD + '\n' + K.lines.join('\n'), stamp: 'keep', keep: true, lines: K.lines });
+    (stampNow.tasks || []).forEach(function (x) { L.push({ at: x.at, body: x.head + '\n' + x.lines.join('\n'), stamp: x.id, task: x, lines: x.lines }); });   // 11/25 やることがある知らせ（共通の形）
     return L;
   }
   function drawStamps(S) { stampNow = S || { todo: [], done: [] }; drawNotes(); sweepStamp(); }
@@ -333,10 +334,12 @@
   }
   function stampFind(L, id) { return (L || []).filter(function (x) { return x.id === id; })[0]; }
   function stampAsk(id) {
+    if (String(id).indexOf('task:') === 0) { var T = stampFind(stampNow.tasks, id); if (!T) return; askBox(T.ask || 'やりましたか？', [T.head].concat(T.lines), '完了にする', function () { stampSend(id, false); }, true); return; }
     if (id === 'keep') { var K = stampNow.keep; if (!K) return; askBox('この牛を Horizon で空胎維持にして、繁殖台帳に「中止」と書きましたか？', K.lines, '完了にする', function () { stampSend('keep', false); }, true); return; }
     if (id === 'photo') { var P = stampNow.photo; if (!P) return; askBox('写真を送らずに完了にしますか？', P.lines.map(function (s) { return String(s).replace(/^・/, ''); }), '完了にする', function () { stampSend('photo', false); }, true); return; }
     var x = stampFind(stampNow.todo, id); if (!x) return; askBox('この牛の台帳に済印を押しましたか？', x.lines, '完了にする', function () { stampSend(id, false); }); }
   function stampUndo(id) {
+    if (String(id).indexOf('task:') === 0) { var TD = stampFind(stampNow.tasksDone, id); if (!TD) return; askBox('お知らせに戻しますか？', [TD.head].concat(TD.lines), '戻す', function () { stampSend(id, true); }, true); return; }
     if (id === 'keep') { var KD = stampNow.keepDone; if (!KD) return; askBox('お知らせに戻しますか？', KD.lines, '戻す', function () { stampSend('keep', true); }, true); return; }
     if (id === 'photo') { var Q = stampNow.photoDone; if (!Q) return; askBox('お知らせに戻しますか？', Q.lines.map(function (s) { return String(s).replace(/^・/, ''); }), '戻す', function () { stampSend('photo', true); }, true); return; }
     var x = stampFind(stampNow.done, id); if (!x) return; askBox('お知らせに戻しますか？', x.lines, '戻す', function () { stampSend(id, true); }); }
@@ -440,7 +443,9 @@
       div.querySelector('.b').textContent = n.body;
       if (n.url && n.url !== './') { div.style.cursor = 'pointer'; div.onclick = function () { location.href = n.url; }; }
       if (n.stamp) {   // 作業が要る知らせ（台帳の済印）だけ「完了」。押すと確認が出る（2段階）
-        div.querySelector('.b').innerHTML = n.keep
+        div.querySelector('.b').innerHTML = n.task
+          ? '<b>' + esc(n.task.head) + '</b>' + n.lines.map(function (s) { return '<br>' + esc(s); }).join('')
+          : n.keep
           ? '<b>' + esc(KEEP_HEAD) + '</b><br>①Horizonで空胎維持にする<br>②繁殖台帳に「中止」と書く' + n.lines.map(function (s) { return '<br><b>' + esc(s) + '</b>'; }).join('') + '<br><span class="x" style="font-size:13px">Horizon で空胎維持になった牛は、次の朝に自動で消えます</span>'
           : n.photo
           ? '<b>' + esc(PHOTO_HEAD) + '</b>' + n.lines.map(function (s) { return '<br>' + esc(s); }).join('') + (n.note ? '<br><span class="x" style="font-size:13px">' + esc(n.note) + '</span>' : '') +
@@ -452,6 +457,7 @@
       $('list').appendChild(div);
     });
     var D = (stampNow.done || []).slice();
+    (stampNow.tasksDone || []).forEach(function (x) { D.unshift({ id: x.id, photo: true, by: x.by, doneAt: x.doneAt, lines: [x.head].concat(x.lines) }); });
     if (stampNow.keepDone) D.unshift({ id: 'keep', photo: true, by: stampNow.keepDone.by, doneAt: stampNow.keepDone.doneAt, lines: stampNow.keepDone.lines.map(function (s) { return '空胎維持：' + s; }) });
     if (stampNow.photoDone) D.unshift({ id: 'photo', photo: true, by: stampNow.photoDone.by, doneAt: stampNow.photoDone.doneAt, lines: stampNow.photoDone.lines.map(function (s) { return '写真：' + String(s).replace(/^・/, ''); }) });
     if (D.length) {
